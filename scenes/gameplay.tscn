@@ -4,7 +4,6 @@
 [ext_resource type="Script" uid="uid://x07g0ofh52kb" path="res://scripts/database.gd" id="2_00tan"]
 [ext_resource type="FontFile" uid="uid://du4vnpp518n34" path="res://RhythmicHits.ttf" id="2_l1v76"]
 [ext_resource type="Shader" uid="uid://vitgrscnpngr" path="res://scenes/kaleidoscopebg.gdshader" id="3_ctvyo"]
-[ext_resource type="Script" uid="uid://dttyfnl5ygkmg" path="res://scripts/video_background.gd" id="3_videobg"]
 [ext_resource type="Script" uid="uid://oakew3acqt7m" path="res://scenes/kaleidoscope.gd" id="4_ctvyo"]
 [ext_resource type="Shader" uid="uid://gk44pgcscdc5" path="res://scenes/gameplay.gdshader" id="5_4bh5q"]
 [ext_resource type="Shader" uid="uid://e3qokehahfe5" path="res://scenes/sky.gdshader" id="5_101mb"]
@@ -46,27 +45,6 @@ script = ExtResource("1_script")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1037771439]
 environment = SubResource("Environment_ct7aa")
-
-[node name="VideoBG" type="TextureRect" parent="." unique_id=100000001]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("3_videobg")
-
-[node name="HTTPRequest" type="HTTPRequest" parent="VideoBG" unique_id=100000002]
-timeout = 20.0
-
-[node name="Overlay" type="ColorRect" parent="VideoBG" unique_id=100000003]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.65)
 
 [node name="Background" type="ColorRect" parent="." unique_id=892732215]
 offset_right = 1152.0

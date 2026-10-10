@@ -140,7 +140,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_fonts/font = ExtResource("5_eq4qm")
 theme_override_font_sizes/font_size = 44
-text = "RHYTHM GAME"
+text = "GARAGE BAND"
 horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="CyberPanel/VBox" unique_id=262662132]
@@ -178,7 +178,7 @@ layout_mode = 2
 modulate = Color(0.55, 0.55, 0.55, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Teclas Predeterminadas: S  D  F  H  J  K "
+text = "Teclas Predeterminadas: D  F  J  K  L"
 horizontal_alignment = 1
 
 [node name="Sep3" type="HSeparator" parent="CyberPanel/VBox" unique_id=172687200]
@@ -201,6 +201,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_j6d0t")
 text = "BUSCAR CANCIONES"
 
 [node name="TwoPlayerButton" type="Button" parent="CyberPanel/VBox" unique_id=361539423]
+visible = false
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_ibsnk")
 text = "2 Jugadores"
@@ -312,14 +313,6 @@ offset_right = 97.0
 offset_bottom = 383.0
 text = "Carril 5: J"
 
-[node name="BtnCarril6" type="Button" parent="SettingsPanel" unique_id=1921327207]
-layout_mode = 0
-offset_left = 128.0
-offset_top = 353.0
-offset_right = 209.0
-offset_bottom = 384.0
-text = "Carril 6: K"
-
 [node name="SettingsCerrar" type="Button" parent="." unique_id=399447538]
 visible = false
 layout_mode = 0
@@ -339,5 +332,4 @@ text = "Cerrar"
 [connection signal="pressed" from="SettingsPanel/BtnCarril3" to="." method="_on_btn_carril_3_pressed"]
 [connection signal="pressed" from="SettingsPanel/BtnCarril4" to="." method="_on_btn_carril_4_pressed"]
 [connection signal="pressed" from="SettingsPanel/BtnCarril5" to="." method="_on_btn_carril_5_pressed"]
-[connection signal="pressed" from="SettingsPanel/BtnCarril6" to="." method="_on_btn_carril_6_pressed"]
 [connection signal="pressed" from="SettingsCerrar" to="." method="_on_settings_cerrar_pressed"]
