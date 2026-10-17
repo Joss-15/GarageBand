@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bpfccrqogeywn"]
 
-[ext_resource type="Script" uid="uid://dq3t30cdxdq7" path="res://scripts/gameplay.gd" id="1_script"]
-[ext_resource type="Script" uid="uid://x07g0ofh52kb" path="res://scripts/database.gd" id="2_00tan"]
+[ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/database.gd" id="2_00tan"]
 [ext_resource type="FontFile" uid="uid://du4vnpp518n34" path="res://RhythmicHits.ttf" id="2_l1v76"]
 [ext_resource type="Shader" uid="uid://vitgrscnpngr" path="res://scenes/kaleidoscopebg.gdshader" id="3_ctvyo"]
 [ext_resource type="Script" uid="uid://oakew3acqt7m" path="res://scenes/kaleidoscope.gd" id="4_ctvyo"]
