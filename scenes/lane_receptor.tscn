@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cfhgsl0mn6gq6"]
 
-[ext_resource type="Script" uid="uid://ppocjifngavx" path="res://scripts/lane_receptor.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ppocjifngavx" path="res://scrpts/lane_receptor.gd" id="1_script"]
 
 [node name="LaneReceptor" type="Node2D" unique_id=313382087]
 script = ExtResource("1_script")

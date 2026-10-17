@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://sy6vpu7m8jgc"]
 
-[ext_resource type="Script" uid="uid://c6uirtk2tqm4e" path="res://scripts/song_select.gd" id="1_abcqd"]
+[ext_resource type="Script" uid="uid://c6uirtk2tqm4e" path="res://scrpts/song_select.gd" id="1_abcqd"]
 [ext_resource type="Texture2D" uid="uid://swixed2shcs5" path="res://fondito.jpg" id="2_1fack"]
 [ext_resource type="AudioStream" uid="uid://bjs6t600cbndd" path="res://menumusic.wav" id="3_rwalk"]
 [ext_resource type="Texture2D" uid="uid://fle5gifu30c0" path="res://settings.png" id="4_hwm7x"]

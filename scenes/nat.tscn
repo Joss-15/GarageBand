@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bebgeh7l2pgh0"]
 
-[ext_resource type="Script" uid="uid://dif2ol4n1krjo" path="res://scripts/nat.gd" id="1_4y10u"]
+[ext_resource type="Script" uid="uid://dif2ol4n1krjo" path="res://scrpts/nat.gd" id="1_4y10u"]
 [ext_resource type="Texture2D" uid="uid://cwcq05ccalc03" path="res://assets/nat_punch.png" id="1_f84c1"]
 [ext_resource type="Texture2D" uid="uid://c6k4g07jiy4yk" path="res://assets/nat_hurt.png" id="1_gq01e"]
 [ext_resource type="Texture2D" uid="uid://c2snxjtwsouwk" path="res://assets/nat_kick.png" id="2_4y10u"]

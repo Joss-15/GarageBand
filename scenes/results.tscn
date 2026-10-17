@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bgsusrxoojc40"]
 
-[ext_resource type="Script" uid="uid://cc6y86h583a22" path="res://scripts/results.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cc6y86h583a22" path="res://scrpts/results.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://du4vnpp518n34" path="res://RhythmicHits.ttf" id="2_21kdr"]
 
 [node name="Results" type="Control" unique_id=2095361645]

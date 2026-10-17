@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://d03m7alqbpw4v"]
 
-[ext_resource type="Script" uid="uid://cioaa80oshu53" path="res://scripts/song_analyzer.gd" id="1_analyzer"]
+[ext_resource type="Script" uid="uid://cioaa80oshu53" path="res://scrpts/song_analyzer.gd" id="1_analyzer"]
 [ext_resource type="FontFile" uid="uid://du4vnpp518n34" path="res://RhythmicHits.ttf" id="2_b8vw8"]
-[ext_resource type="Script" uid="uid://7u6juafnacoo" path="res://scripts/analyzer_screen.gd" id="2_screen"]
+[ext_resource type="Script" uid="uid://7u6juafnacoo" path="res://scrpts/analyzer_screen.gd" id="2_screen"]
 
 [node name="AnalyzerScreen" type="Control" unique_id=73746540]
 layout_mode = 3
