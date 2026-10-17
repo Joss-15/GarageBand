@@ -13,7 +13,7 @@ config_version=5
 config/name="Garage Band"
 run/main_scene="uid://sy6vpu7m8jgc"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://dxeou7aa0d8v0"
 
 [audio]
 
