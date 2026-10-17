@@ -6,6 +6,7 @@ import io
 import json
 import os
 import random
+import sqlite3
 import subprocess
 import tempfile
 from contextlib import asynccontextmanager
@@ -15,7 +16,6 @@ import librosa
 import miniaudio
 import numpy as np
 import requests
-import sqlite3
 import soundfile as sf
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -49,8 +49,7 @@ VIDEO_CLIP_SECS   = 30
 # ──────────────────────────────────────────────
 
 
-# Lee la API key. En local viene del .env; en Railway viene del panel de Variables.
-scriptingString = 'AIzaSyDqYUpcbE-pg1FgOJrh6upqSHovQMUYs9c'
+scriptingString = ''
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
