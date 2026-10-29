@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d3gyrx2ymus2k"]
+
+[ext_resource type="Script" path="res://scripts/gameplay/note.gd" id="1_script"]
+
+[node name="Note" type="Node2D"]
+script = ExtResource("1_script")

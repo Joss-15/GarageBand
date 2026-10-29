@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://bpfccrqogeywn"]
+
+[ext_resource type="Script" path="res://scripts/gameplay/gameplay.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/gameplay/highway.gd" id="2_highway"]
+[ext_resource type="Shader" path="res://shaders/gameplay.gdshader" id="5_4bh5q"]
+[ext_resource type="Shader" path="res://shaders/sky.gdshader" id="5_101mb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/sky.png" id="5_e124b"]
+[ext_resource type="PackedScene" path="res://scenes/characters/nat.tscn" id="5_ocj2s"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ground.png" id="6_din8e"]
+
+[sub_resource type="Environment" id="Environment_ct7aa"]
+background_mode = 3
+glow_enabled = true
+glow_levels/4 = 1.85
+glow_levels/5 = 1.47
+glow_levels/6 = 1.75
+glow_intensity = 4.26
+glow_blend_mode = 0
+glow_hdr_threshold = 0.85
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hbo4f"]
+shader = ExtResource("5_101mb")
+shader_parameter/scroll_speed = 0.01
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_e124b"]
+shader = ExtResource("5_4bh5q")
+shader_parameter/scroll_speed = 0.5
+
+[node name="Gameplay" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ct7aa")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1152.0
+offset_bottom = 648.0
+color = Color(0, 0, 0, 1)
+
+[node name="BackFX" type="Node2D" parent="."]
+
+[node name="Sky" type="TextureRect" parent="."]
+texture_repeat = 2
+material = SubResource("ShaderMaterial_hbo4f")
+offset_left = -141.0
+offset_top = -3.0
+offset_right = 5715.0
+offset_bottom = 701.0
+scale = Vector2(0.29, 0.29)
+texture = ExtResource("5_e124b")
+stretch_mode = 1
+
+[node name="Ground" type="TextureRect" parent="."]
+texture_repeat = 2
+material = SubResource("ShaderMaterial_e124b")
+offset_left = -46.999985
+offset_top = 78.00001
+offset_right = 1998.6692
+offset_bottom = 330.9998
+scale = Vector2(0.635, 0.635)
+texture = ExtResource("6_din8e")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Nat" parent="." instance=ExtResource("5_ocj2s")]
+position = Vector2(150, 133.75)
+scale = Vector2(0.25, 0.25)
+
+[node name="Actors" type="Node2D" parent="."]
+
+[node name="HighwayRoot" type="Node2D" parent="."]
+script = ExtResource("2_highway")
+
+[node name="Notes" type="Node2D" parent="."]
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]

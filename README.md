@@ -1,41 +1,75 @@
-# Rhythm Game 🎧⚡
+# Garage Band 🎸⚡
 
-¿Tienes el ritmo en las venas o vas a perder el combo en la primera nota? Prepárate para **Rhythm Game**, un juego de ritmo frenético de 6 carriles donde tus reflejos y tu oído musical son tu única salvación. ¡Siente la música, domina los carriles y demuestra quién es el rey de la pista!
+Juego de ritmo de **5 carriles** hecho en **Godot 4.6**, con una interfaz inspirada en Rock Band: carril en perspectiva con "banda eléctrica", notas con relieve, selección de canción por orden alfabético, elección de instrumento, pausa, resultados con estrellas y tabla de posiciones local. Mientras tocas, **Nat** pelea contra los enemigos que representan tus notas.
 
-## 🔥 CARACTERÍSTICAS PRINCIPALES
+## 🎮 Cómo jugar
 
-* 🎹 **Acción a 6 Carriles:** Un desafío clásico de ritmo. Las notas caen a toda velocidad y tu misión es clavarlas en el momento exacto. ¡Consigue Perfects y mantén tu combo al máximo!
-* ⚔️ **Multijugador Local (1v1):** ¿Crees que eres el mejor? Reta a un amigo en la misma pantalla. Dos jugadores, una canción, y solo un ganador. ¡Que gane el que tenga los dedos más rápidos!
-* 🧠 **Beatmaps Dinámicos (Magia Pura):** ¡El juego crea los niveles por ti! Gracias a un analizador interno, el juego procesa las canciones y genera el mapa de notas automáticamente.
-* 🌍 **Bilingüe (English / Español):** Cambia el idioma de toda la interfaz al instante con un solo clic.
-* 👁️ **Accesibilidad ante todo:** Incluye un Modo Daltonismo integrado con shaders personalizados para que los colores de las notas se adapten y todos puedan disfrutar del juego sin problemas visuales.
-* 🌃 **Estética Cyberpunk Neón:** Uso intensivo de efectos de *Glow* HDR, shaders de distorsión y paletas de colores vibrantes.
-* 🎬 **Fondos Dinámicos:** El servidor descarga clips de video de las canciones seleccionadas, extrae frames en la nube y los envía al cliente como un slideshow animado.
+* **Teclas por defecto:** `D` `F` `J` `K` `L` (se pueden cambiar en *Opciones → Teclas*).
+* Presiona la tecla del carril cuando la nota llegue a la barra cromada.
+* Tu precisión define el juicio: **PERFECTO**, **BIEN**, **REGULAR** o **FALLO**. Presionar una tecla al aire también cuenta como fallo y rompe el combo.
+* `Esc` pausa la partida (continuar con cuenta 3-2-1, reiniciar o salir al menú).
 
-## 🎮 CÓMO JUGAR
+## ✨ Características
 
-¡Es súper sencillo de entender, pero difícil de dominar!
-* **Controles:** Teclas `S`, `D`, `F`, `H`, `J`, `K` (o la configuración que prefieras en tu teclado).
-* Espera a que las notas de colores caigan por la pantalla.
-* Presiona la tecla correspondiente justo cuando la nota pase por la línea de golpe (*Hit Line*) en la parte inferior.
-* Tu precisión define tu puntuación: **PERFECT**, **GOOD** o **BAD**. ¡Si dejas pasar la nota, será un **MISS** y perderás tu combo!
+* **Menú principal** con submenú de opciones en cascada: volumen, reasignación de teclas (con modal Aceptar/Cancelar), idioma (Español / English) y modo daltonismo. Los ajustes se guardan entre sesiones.
+* **Biblioteca musical** ordenada por letra, con portada, mejor puntaje, dificultad por instrumento y preescucha de la canción resaltada.
+* **Instrumentos:** guitarra, bajo, batería y micrófono; cada uno puede tener su propio mapa de notas.
+* **Gameplay:** carril en perspectiva (shader), barra de rendimiento, puntos, progreso de la canción, combo y juicios.
+* **Resultados:** puntos totales, precisión, rango, estrellas y tabla de posiciones guardada en SQLite local (`godot-sqlite`).
 
-## 🛠️ DETALLES TÉCNICOS
+## 🎵 Agregar canciones
 
-Desarrollado con muchísimo cariño (y mucho café) utilizando **Godot Engine 4**. Jugable directamente desde tu navegador de internet, ¡sin descargar nada!
+Cada canción vive en su propia carpeta dentro de `songs/`:
 
-### Cliente
-* **Modo de Renderizado:** *Compatibility* (optimizadísimo para HTML5 y WebAssembly usando SharedArrayBuffer).
-* **Shaders Procedurales (Fragment Shaders):** El apartado visual destaca por el uso intensivo de matemáticas puras en la GPU. El fondo caleidoscópico utiliza coordenadas polares, funciones trigonométricas (`sin`, `cos`) y la variable de tiempo (`TIME`) para crear anillos geométricos con distorsiones orgánicas ("efecto espagueti/bajo el agua"), reemplazando costosos sistemas de partículas por código altamente optimizado.
-* **Game Feel & Animaciones Rítmicas:** Uso avanzado de Tweens combinados con la detección de BPM para animar a los enemigos y la UI. El juego responde a los impactos superando el umbral HDR (`>1.0`) para activar efectos de Glow/Bloom en tiempo real, latidos de pantalla ("Screen Pump") al acertar y temblores erráticos de cámara ("Shake") al fallar.
-* **UI Dinámica:** Uso de `PanelContainer` con `StyleBoxFlat` para generar interfaces asimétricas con bordes neón y esquinas cortadas sin usar texturas externas.
-* **Game Feel & Animaciones:** Sistema de *Tweens* para feedback visual (escalado de notas al golpearlas, vibración de la cámara, pulsos de energía en botones) y Shaders nativos (efecto Glitch y RGB split al fallar notas).
-* **Gestión de Audio:** Implementación de buses de audio para aplicar efectos dinámicos en tiempo real (como LowPass filters) y sincronización precisa con los beatmaps.
+```
+songs/
+└── NombreCancion/
+    ├── NombreCancion.wav              (audio, obligatorio)
+    ├── NombreCancion.json             (mapa de notas base, obligatorio)
+    ├── NombreCancion_guitarra.json    (opcional: un mapa por instrumento)
+    ├── NombreCancion_bajo.json
+    ├── NombreCancion_batería.json
+    ├── NombreCancion_microfono.json
+    ├── info.json                      (opcional: {"title": "...", "artist": "..."})
+    └── cover.png                      (opcional: portada)
+```
 
-### Backend (Python + FastAPI)
-* **Despliegue:** Alojado en **Railway** con volúmenes persistentes (`/app/data`) para almacenamiento de caché de descargas.
-* **Generación Cuantizada de Beatmaps:** Algoritmo en Python impulsado por `librosa` que analiza el audio descargado. Aplica "Snap to grid" para asegurar que las notas caigan en tiempos musicales perfectos (semicorcheas) y segmenta la energía acústica (Low, Mid, High) para mapear inteligentemente los instrumentos a carriles específicos.
-* **Base de Datos:** SQLite para la persistencia de metadatos, gestión de canciones cacheadas y tablas de puntuación.
+Si el mapa de un instrumento no existe, se usa el mapa base. El título y el artista se deducen del nombre (`artista-Titulo`) si no hay `info.json`.
+
+## 📁 Estructura del proyecto
+
+```
+├── project.godot
+├── addons/godot-sqlite/        Base de datos SQLite
+├── assets/
+│   ├── audio/                  Música del menú
+│   ├── fonts/                  Tipografías
+│   ├── images/                 Fondos e íconos
+│   └── sprites/                Nat, enemigos, cielo y suelo
+├── scenes/
+│   ├── autoload/               Escenas globales (filtro de daltonismo)
+│   ├── characters/             Nat y enemigos
+│   ├── gameplay/               Partida, nota y receptor de carril
+│   └── screens/                Menú principal, canciones, instrumento, resultados
+├── scripts/
+│   ├── autoload/               GameState, Database, SceneFade (transiciones)
+│   ├── core/                   Tema visual (rb_theme) y biblioteca de canciones
+│   ├── characters/             Lógica de Nat y enemigos
+│   ├── gameplay/               Partida, carril, notas, HUD, pausa, luces
+│   ├── screens/                Lógica de cada pantalla
+│   └── widgets/                Componentes reutilizables de interfaz
+├── shaders/                    Carril eléctrico, cielo, suelo, filtro daltonismo
+├── songs/                      Canciones (ver arriba)
+└── tools/                      Herramientas externas (ignoradas por Godot)
+```
+
+`tools/` guarda `generate_beatmaps.py` y los stems usados para crear los mapas por instrumento. Godot no los importa (`.gdignore`).
+
+## 🛠️ Detalles técnicos
+
+* Resolución base **1152×648** escalada a **1920×1080** (`canvas_items`, proporción 16:9).
+* Renderizado *Compatibility*.
+* El carril se dibuja con un shader (`shaders/highway.gdshader`) y las notas se posicionan según el tiempo de la canción compensado por la latencia de audio.
 
 ---
 
