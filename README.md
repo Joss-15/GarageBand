@@ -43,14 +43,16 @@ Si el mapa de un instrumento no existe, se usa el mapa base. El título y el art
 ├── addons/godot-sqlite/        Base de datos SQLite
 ├── assets/
 │   ├── audio/                  Música del menú
-│   ├── fonts/                  Tipografías
+│   ├── fonts/                  Tipografía de marca
+│   ├── ui/                     Recursos compartidos de interfaz (fuentes .tres)
 │   ├── images/                 Fondos e íconos
 │   └── sprites/                Nat, enemigos, cielo y suelo
 ├── scenes/
 │   ├── autoload/               Escenas globales (filtro de daltonismo)
 │   ├── characters/             Nat y enemigos
-│   ├── gameplay/               Partida, nota y receptor de carril
-│   └── screens/                Menú principal, canciones, instrumento, resultados
+│   ├── gameplay/               Partida (carril, HUD, pausa), nota y receptor
+│   ├── screens/                Menú principal, canciones, instrumento, resultados
+│   └── widgets/                Componentes de interfaz reutilizables (fondo, lista, portada, filas...)
 ├── scripts/
 │   ├── autoload/               GameState, Database, SceneFade (transiciones)
 │   ├── core/                   Tema visual (rb_theme) y biblioteca de canciones
@@ -62,6 +64,8 @@ Si el mapa de un instrumento no existe, se usa el mapa base. El título y el art
 ├── songs/                      Canciones (ver arriba)
 └── tools/                      Herramientas externas (ignoradas por Godot)
 ```
+
+**Las pantallas y widgets están armados con nodos dentro de los `.tscn`** (se ven y editan en el editor de Godot); los scripts solo contienen lógica y contenido dinámico (canciones, puntajes, etc.). Los textos en la escena están en español y el inglés vive en el metadato `en` de cada nodo (`RB.localize` los intercambia según el idioma).
 
 `tools/` guarda `generate_beatmaps.py` y los stems usados para crear los mapas por instrumento. Godot no los importa (`.gdignore`).
 

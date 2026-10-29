@@ -1,8 +1,10 @@
-import os
 import json
+import os
+import subprocess
+
 import librosa
 import numpy as np
-import subprocess
+
 
 def separate_audio_stems(audio_file_path, output_dir):
     """
@@ -140,5 +142,5 @@ def generate_all_beatmaps(filename):
 
 
 if __name__ == "__main__":
-    SONG_FILE = "ImNotOkay.wav"
+    SONG_FILE = "femtanyl.wav"
     generate_all_beatmaps(SONG_FILE)

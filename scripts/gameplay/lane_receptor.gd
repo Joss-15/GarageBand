@@ -1,5 +1,8 @@
+@tool
 ## lane_receptor.gd
-## Indicador de carril con forma de pastilla biselada, dibujada 100% en código.
+## Indicador de carril con forma de pastilla biselada, dibujada en código (escena
+## lane_receptor.tscn; las partículas son el nodo "Particles"). Es @tool: se ve en
+## el editor con el color que tenga `lane_color`.
 ## Capas del bisel (de abajo hacia arriba):
 ##   1. Sombra exterior (offset abajo-derecha, muy oscura)
 ##   2. Cuerpo base (color del carril)
@@ -9,10 +12,14 @@
 
 extends Node2D
 
-var lane_color: Color = Color.WHITE
-var lane_index: int   = 0
+@export var lane_color: Color = Color.WHITE:
+	set(v):
+		lane_color = v
+		_apply_particle_color()
+		queue_redraw()
+@export var lane_index: int = 0
 
-var _particles: CPUParticles2D = null
+@onready var _particles: CPUParticles2D = $Particles
 
 # ── Dimensiones de la pastilla ────────────────────────────────────────────────
 const W           := 72.0    # Ancho total
@@ -20,39 +27,27 @@ const H           := 24.0    # Alto total
 const CORNER      := 7.0     # Radio de esquinas (para simular con layering)
 const BEVEL       := 4.0     # Grosor del bisel en píxeles
 
-# Opacidad base (el modulate se anima sobre este nodo)
-const BASE_ALPHA  := 0.70
 const PRESS_SCALE := Vector2(1.22, 1.45)
 const BASE_SCALE  := Vector2(1.0,  1.0)
 
 # Estado de animación de brillo (0.0 = normal, 1.0 = flash completo)
 var _flash: float = 0.0
 
+
 func _ready() -> void:
-	modulate.a = BASE_ALPHA
-
-	_particles = CPUParticles2D.new()
-	_particles.emitting             = false
-	_particles.one_shot             = true
-	_particles.explosiveness        = 1.0
-	_particles.amount               = 18
-	_particles.lifetime             = 0.55
-	_particles.speed_scale          = 2.0
-	_particles.direction            = Vector2(0, -1)
-	_particles.spread               = 80.0
-	_particles.initial_velocity_min = 70.0
-	_particles.initial_velocity_max = 170.0
-	_particles.gravity              = Vector2(0, 130)
-	_particles.scale_amount_min     = 3.0
-	_particles.scale_amount_max     = 6.0
-	_particles.color                = lane_color
-	var grad := Gradient.new()
-	grad.set_color(0, Color(lane_color.r, lane_color.g, lane_color.b, 1.0))
-	grad.set_color(1, Color(lane_color.r, lane_color.g, lane_color.b, 0.0))
-	_particles.color_ramp           = grad
-	add_child(_particles)
-
+	_apply_particle_color()
 	queue_redraw()
+
+
+## Pinta las partículas con el color del carril (el degradado es local a cada instancia).
+func _apply_particle_color() -> void:
+	if not is_node_ready():
+		return
+	_particles.color = lane_color
+	var grad: Gradient = _particles.color_ramp
+	if grad != null:
+		grad.set_color(0, Color(lane_color.r, lane_color.g, lane_color.b, 1.0))
+		grad.set_color(1, Color(lane_color.r, lane_color.g, lane_color.b, 0.0))
 
 
 func _draw() -> void:
@@ -70,7 +65,6 @@ func _draw() -> void:
 	_draw_pill(r, base_col, CORNER)
 
 	# ── 3. Cara biselada inferior + laterales (sombra interna) ────────────────
-	# Triángulo inferior que simula la cara de sombra del bisel
 	var dark := lane_color.darkened(0.45)
 	# Franja inferior
 	_draw_pill(Rect2(-hw, hh - BEVEL, W, BEVEL), dark, minf(CORNER, BEVEL * 0.5))
@@ -89,7 +83,6 @@ func _draw() -> void:
 	_draw_pill(Rect2(-hw + BEVEL, -hh + BEVEL * 0.5, W - BEVEL * 2, spec_h), specular, CORNER * 0.6)
 
 	# ── 6. Borde exterior fino ────────────────────────────────────────────────
-	# Simulado con un pill ligeramente más pequeño oscuro encima — sutil
 	var rim := lane_color.darkened(0.25)
 	rim.a    = 0.6
 	_draw_pill_outline(r, rim, CORNER)
@@ -146,7 +139,7 @@ func animate_press() -> void:
 	tw.parallel().tween_property(self, "scale", PRESS_SCALE, 0.05)
 
 	# 2. Flash de color blanco puro (sobrepasa el 0.85 del Glow)
-	self_modulate = Color(2, 2, 2, 1) 
+	self_modulate = Color(2, 2, 2, 1)
 	tw.parallel().tween_property(self, "self_modulate", Color(1, 1, 1, 1), 0.15)
 
 	# Regreso a normal

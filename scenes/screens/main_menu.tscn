@@ -1,8 +1,54 @@
-[gd_scene format=3 uid="uid://cmflovtgwi578"]
+[gd_scene format=3 uid="uid://dkstul300ltr4"]
 
 [ext_resource type="Script" uid="uid://1sy0w4el76vs" path="res://scripts/screens/main_menu.gd" id="1_menu"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_backdrop.tscn" id="2_bd"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_menu_list.tscn" id="3_list"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/player_tab.tscn" id="4_tab"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/keybind_modal.tscn" id="5_modal"]
+[ext_resource type="FontFile" uid="uid://du4vnpp518n34" path="res://assets/fonts/RhythmicHits.ttf" id="6_brand"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="7_bold"]
 
-[node name="MainMenu" type="Control" unique_id=1839461212]
+[sub_resource type="Gradient" id="g_knob"]
+offsets = PackedFloat32Array(0.88, 0.97)
+colors = PackedColorArray(0.97, 0.97, 1, 1, 0.97, 0.97, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="t_knob"]
+gradient = SubResource("g_knob")
+width = 28
+height = 28
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="sb_slider"]
+content_margin_top = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.1, 0.11, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.52, 0.6, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_grab"]
+bg_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_grab_hi"]
+bg_color = Color(1, 0.95, 0.35, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="MainMenu" type="Control" unique_id=157112180]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -10,3 +56,100 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
+
+[node name="Backdrop" parent="." unique_id=1653309995 instance=ExtResource("2_bd")]
+layout_mode = 1
+tint = Color(0.28, 0.4, 0.95, 1)
+
+[node name="Logo" type="HBoxContainer" parent="." unique_id=1313471939]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 84.0
+offset_top = 40.0
+offset_right = 604.0
+offset_bottom = 130.0
+mouse_filter = 2
+theme_override_constants/separation = 18
+
+[node name="Garage" type="Label" parent="Logo" unique_id=1427153807]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("6_brand")
+theme_override_font_sizes/font_size = 58
+text = "GARAGE"
+
+[node name="Band" type="Label" parent="Logo" unique_id=2100379535]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.82, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("6_brand")
+theme_override_font_sizes/font_size = 58
+text = "BAND"
+
+[node name="SubHeader" type="Label" parent="." unique_id=1577819761]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 86.0
+offset_top = 250.0
+offset_right = 500.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(0.6, 0.62, 0.68, 0.75)
+theme_override_fonts/font = ExtResource("7_bold")
+theme_override_font_sizes/font_size = 58
+text = "OPCIONES"
+metadata/en = "OPTIONS"
+
+[node name="List" parent="." unique_id=1240398994 instance=ExtResource("3_list")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 86.0
+offset_top = 250.0
+offset_right = 846.0
+offset_bottom = 670.0
+
+[node name="VolumeSlider" type="HSlider" parent="." unique_id=1622680913]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 335.0
+offset_top = 426.0
+offset_right = 595.0
+offset_bottom = 454.0
+focus_mode = 0
+theme_override_icons/grabber = SubResource("t_knob")
+theme_override_icons/grabber_highlight = SubResource("t_knob")
+theme_override_styles/slider = SubResource("sb_slider")
+theme_override_styles/grabber_area = SubResource("sb_grab")
+theme_override_styles/grabber_area_highlight = SubResource("sb_grab_hi")
+max_value = 1.0
+step = 0.01
+value = 0.4
+
+[node name="VolumeValue" type="Label" parent="." unique_id=484994905]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 613.0
+offset_top = 418.0
+offset_right = 700.0
+offset_bottom = 462.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("7_bold")
+theme_override_font_sizes/font_size = 30
+text = "40%"
+
+[node name="PlayerTab" parent="." unique_id=509917075 instance=ExtResource("4_tab")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 50.0
+offset_top = 570.0
+offset_right = 390.0
+offset_bottom = 648.0
+
+[node name="KeybindModal" parent="." unique_id=1609741302 instance=ExtResource("5_modal")]
+unique_name_in_owner = true
+layout_mode = 1

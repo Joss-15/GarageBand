@@ -1,17 +1,14 @@
 ## stage_fx.gd
-## Haces de luz de escenario que oscilan lentamente (mezcla aditiva).
-## pulse() los intensifica un instante, útil al acertar notas.
+## Haces de luz de escenario (los Beam0..4 de la escena) que oscilan lentamente
+## con mezcla aditiva. Los exports reconfiguran cuántos haces se ven, su origen,
+## largo, apertura e intensidad al empezar; pulse() los intensifica un instante.
 extends Node2D
 
 @export var beam_count: int = 4
-@export var origin_y: float = 0.0
-@export var length: float = 600.0
-@export var beam_spread: float = 240.0
-@export var base_alpha: float = 0.10
-@export var beam_colors: Array[Color] = [
-	Color(0.45, 0.60, 1.00), Color(0.70, 0.45, 1.00),
-	Color(0.30, 0.80, 1.00), Color(1.00, 0.50, 0.80),
-]
+@export var origin_y: float = -40.0
+@export var length: float = 808.0
+@export var beam_spread: float = 300.0
+@export var base_alpha: float = 0.085
 
 var _beams: Array[Polygon2D] = []
 var _t: float = 0.0
@@ -20,28 +17,32 @@ var _tween: Tween = null
 
 func _ready() -> void:
 	var vp: Vector2 = get_viewport_rect().size
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	for i in beam_count:
-		var col: Color = beam_colors[i % beam_colors.size()]
-		var top := Color(col.r, col.g, col.b, base_alpha * 1.6)
-		var bottom := Color(col.r, col.g, col.b, 0.0)
-		var poly := Polygon2D.new()
+	for child in get_children():
+		if child is Polygon2D:
+			_beams.append(child as Polygon2D)
+	var count: int = mini(beam_count, _beams.size())
+	for i in _beams.size():
+		var poly: Polygon2D = _beams[i]
+		if i >= count:
+			poly.visible = false
+			continue
+		poly.visible = true
+		var base: Color = poly.vertex_colors[0]
+		var top := Color(base.r, base.g, base.b, base_alpha * 1.6)
+		var bottom := Color(base.r, base.g, base.b, 0.0)
 		poly.polygon = PackedVector2Array([
 			Vector2(-8.0, 0.0), Vector2(8.0, 0.0),
 			Vector2(beam_spread * 0.5, length), Vector2(-beam_spread * 0.5, length),
 		])
 		poly.vertex_colors = PackedColorArray([top, top, bottom, bottom])
-		poly.position = Vector2(vp.x * (float(i) + 0.5) / float(beam_count), origin_y)
-		poly.material = mat
-		add_child(poly)
-		_beams.append(poly)
+		poly.position = Vector2(vp.x * (float(i) + 0.5) / float(count), origin_y)
 
 
 func _process(delta: float) -> void:
 	_t += delta
 	for i in _beams.size():
-		_beams[i].rotation = sin(_t * (0.35 + 0.07 * float(i)) + float(i) * 1.9) * 0.26
+		if _beams[i].visible:
+			_beams[i].rotation = sin(_t * (0.35 + 0.07 * float(i)) + float(i) * 1.9) * 0.26
 
 
 ## Destello breve de intensidad.

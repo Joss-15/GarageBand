@@ -1,11 +1,10 @@
+@tool
 ## instrument_icon.gd
 ## Insignia circular con el ícono de un instrumento, dibujada por código
-## (no necesita imágenes). instrument: guitarra | bajo | batería | microfono
+## (no necesita imágenes). Es @tool: se ve también en el editor.
 extends Control
 
-const RB = preload("res://scripts/core/rb_theme.gd")
-
-@export var instrument: String = "guitarra":
+@export_enum("guitarra", "bajo", "batería", "microfono") var instrument: String = "guitarra":
 	set(value):
 		instrument = value
 		queue_redraw()
@@ -15,11 +14,14 @@ const RB = preload("res://scripts/core/rb_theme.gd")
 		ring_color = value
 		queue_redraw()
 
-@export var glyph_color: Color = Color(0.95, 0.96, 0.98)
+@export var glyph_color: Color = Color(0.95, 0.96, 0.98):
+	set(value):
+		glyph_color = value
+		queue_redraw()
 
 
 func _init() -> void:
-	custom_minimum_size = Vector2(48.0, 48.0)
+	custom_minimum_size = Vector2(40.0, 40.0)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -37,6 +39,14 @@ func _draw() -> void:
 			_draw_mic(c, r)
 		_:
 			_draw_guitar(c, r, false)
+
+
+func _ellipse(center: Vector2, rx: float, ry: float, steps: int = 28) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in steps:
+		var a: float = TAU * float(i) / float(steps)
+		pts.append(center + Vector2(cos(a) * rx, sin(a) * ry))
+	return pts
 
 
 func _draw_guitar(c: Vector2, r: float, bass: bool) -> void:
@@ -60,8 +70,8 @@ func _draw_drums(c: Vector2, r: float) -> void:
 	var ry: float = r * 0.24
 	var top_c: Vector2 = c + Vector2(0.0, -r * 0.10)
 	draw_rect(Rect2(c.x - rx, top_c.y, rx * 2.0, r * 0.50), gc)
-	draw_colored_polygon(RB.ellipse_points(top_c + Vector2(0.0, r * 0.50), rx, ry), gc)
-	draw_colored_polygon(RB.ellipse_points(top_c, rx, ry), rim)
+	draw_colored_polygon(_ellipse(top_c + Vector2(0.0, r * 0.50), rx, ry), gc)
+	draw_colored_polygon(_ellipse(top_c, rx, ry), rim)
 	# baquetas cruzadas
 	draw_line(c + Vector2(-r * 0.62, -r * 0.62), c + Vector2(r * 0.14, -r * 0.04), gc, r * 0.09, true)
 	draw_line(c + Vector2(r * 0.62, -r * 0.62), c + Vector2(-r * 0.14, -r * 0.04), gc, r * 0.09, true)

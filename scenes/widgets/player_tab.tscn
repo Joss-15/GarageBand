@@ -1,0 +1,82 @@
+[gd_scene format=3 uid="uid://bd4lr1x7b17qh"]
+
+[ext_resource type="Script" uid="uid://dqyppdxbt4fub" path="res://scripts/widgets/player_tab.gd" id="1_pt"]
+[ext_resource type="Texture2D" uid="uid://r5aoedfpvjwn" path="res://assets/images/player1_icon.png" id="2_icon"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="3_bold"]
+
+[sub_resource type="StyleBoxFlat" id="sb_body"]
+bg_color = Color(0.4, 0.41, 0.45, 1)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_color = Color(0.8, 0.82, 0.88, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="sb_shine"]
+bg_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_strip"]
+bg_color = Color(0.88, 0.82, 0.1, 1)
+border_width_top = 2
+border_color = Color(1, 0.95, 0.35, 1)
+
+[node name="PlayerTab" type="Control" unique_id=1653266040]
+custom_minimum_size = Vector2(340, 78)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 340.0
+offset_bottom = 78.0
+mouse_filter = 2
+script = ExtResource("1_pt")
+
+[node name="Body" type="Panel" parent="." unique_id=406007768]
+layout_mode = 0
+offset_top = 10.0
+offset_right = 340.0
+offset_bottom = 78.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_body")
+
+[node name="Shine" type="Panel" parent="Body" unique_id=1391728143]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 2.0
+offset_right = 339.0
+offset_bottom = 20.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_shine")
+
+[node name="Icon" type="TextureRect" parent="Body" unique_id=376327795]
+layout_mode = 0
+offset_left = 12.0
+offset_top = -6.0
+offset_right = 62.0
+offset_bottom = 44.0
+mouse_filter = 2
+texture = ExtResource("2_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Body" unique_id=844847737]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 2.0
+offset_right = 232.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 26
+text = "Jugador 1"
+
+[node name="Strip" type="Panel" parent="Body" unique_id=1607265026]
+layout_mode = 0
+offset_top = 38.0
+offset_right = 340.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_strip")

@@ -1,87 +1,63 @@
+@tool
 ## player_tab.gd
 ## Tarjeta metálica de jugador con ícono, nombre y franja amarilla inferior
-## (como las pestañas de la parte baja de los menús de Rock Band).
+## (como las pestañas de la parte baja de los menús de Rock Band). Escena player_tab.tscn.
+## Es @tool: el ancho, el nombre y el jugador (ícono) se ven al cambiarlos en el editor.
 extends Control
 
-const RB = preload("res://scripts/core/rb_theme.gd")
-const ICON = preload("res://scripts/widgets/instrument_icon.gd")
+const PLAYER_ICONS: Array[Texture2D] = [
+	preload("res://assets/images/player1_icon.png"),
+	preload("res://assets/images/player2_icon.png"),
+	preload("res://assets/images/player3_icon.png"),
+	preload("res://assets/images/player4_icon.png"),
+]
 
-var _icon: Control = null
-var _name_lbl: Label = null
-var _strip_lbl: Label = null
-var _tab_width: float = 340.0
+@export var tab_width: float = 340.0:
+	set(v):
+		tab_width = v
+		_apply_width()
 
+@export var player_name: String = "Jugador 1":
+	set(v):
+		player_name = v
+		if is_node_ready():
+			$Body/NameLabel.text = v
 
-func setup(player_name: String, instrument: String, pill: String, strip_text: String, tab_width: float = 340.0) -> void:
-	_tab_width = tab_width
-	custom_minimum_size = Vector2(tab_width, 78.0)
-	size = Vector2(tab_width, 78.0)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var body := Panel.new()
-	body.position = Vector2(0.0, 10.0)
-	body.size = Vector2(tab_width, 68.0)
-	var sb := RB.box(Color(0.40, 0.41, 0.45), 0, Color(0.80, 0.82, 0.88), 0)
-	sb.corner_radius_top_left = 18
-	sb.corner_radius_top_right = 18
-	sb.border_width_top = 2
-	sb.border_width_left = 1
-	sb.border_width_right = 1
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
-	sb.shadow_size = 8
-	body.add_theme_stylebox_override("panel", sb)
-	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(body)
-
-	var shine := ColorRect.new()
-	shine.color = Color(1.0, 1.0, 1.0, 0.10)
-	shine.position = Vector2(8.0, 14.0)
-	shine.size = Vector2(tab_width - 16.0, 14.0)
-	shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(shine)
-
-	_icon = ICON.new()
-	_icon.instrument = instrument
-	_icon.size = Vector2(54.0, 54.0)
-	_icon.position = Vector2(8.0, 0.0)
-	add_child(_icon)
-
-	_name_lbl = RB.label(player_name, 26, Color.WHITE)
-	_name_lbl.position = Vector2(72.0, 12.0)
-	add_child(_name_lbl)
-
-	var strip := Panel.new()
-	strip.position = Vector2(0.0, 46.0)
-	strip.size = Vector2(tab_width, 30.0)
-	var ssb := RB.box(RB.GOLD, 0, RB.GOLD_BRIGHT, 0)
-	ssb.border_width_top = 2
-	strip.add_theme_stylebox_override("panel", ssb)
-	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(strip)
-
-	var px: float = 74.0
-	if pill != "":
-		var pw: float = RB.text_width(pill, 13) + 16.0
-		var pp := Panel.new()
-		pp.add_theme_stylebox_override("panel", RB.box(Color(0.04, 0.04, 0.05), 6))
-		pp.position = Vector2(px, 49.0)
-		pp.size = Vector2(pw, 22.0)
-		pp.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var pl := RB.label(pill, 13, Color.WHITE)
-		pl.position = Vector2(8.0, 2.0)
-		pp.add_child(pl)
-		add_child(pp)
-		px += pw + 10.0
-	_strip_lbl = RB.label(strip_text, 20, RB.INK)
-	_strip_lbl.position = Vector2(px, 46.0)
-	add_child(_strip_lbl)
+## Número de jugador (1-4): decide cuál ícono playerN_icon se muestra.
+@export_range(1, 4) var player_number: int = 1:
+	set(v):
+		player_number = clampi(v, 1, PLAYER_ICONS.size())
+		_apply_icon()
 
 
-func set_instrument(id: String) -> void:
-	if _icon != null:
-		_icon.instrument = id
+func _ready() -> void:
+	$Body/NameLabel.text = player_name
+	_apply_icon()
+	_apply_width()
 
 
-func set_strip_text(text: String) -> void:
-	if _strip_lbl != null:
-		_strip_lbl.text = text
+func _apply_icon() -> void:
+	if not is_node_ready():
+		return
+	($Body/Icon as TextureRect).texture = PLAYER_ICONS[player_number - 1]
+
+
+func _apply_width() -> void:
+	if not is_node_ready():
+		return
+	var body := $Body as Control
+	var shine := $Body/Shine as Control
+	var strip := $Body/Strip as Control
+	body.size = Vector2(tab_width, body.size.y)
+	shine.position.x = 1.0  # dentro del borde de 1 px del Body
+	shine.size = Vector2(tab_width - 2.0, shine.size.y)
+	strip.size = Vector2(tab_width, strip.size.y)
+	if not Engine.is_editor_hint():
+		custom_minimum_size.x = tab_width
+
+
+## Atajo para fijar nombre y jugador de una vez. El segundo parámetro (instrumento)
+## se ignora: se conserva para no romper las llamadas existentes.
+func setup(p_name: String, _p_instrument: String = "", p_number: int = 1) -> void:
+	player_name = p_name
+	player_number = p_number

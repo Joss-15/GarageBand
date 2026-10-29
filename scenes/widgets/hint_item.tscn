@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://2pd5vusebxp6"]
+
+[ext_resource type="Script" uid="uid://dw5t0d4npxkef" path="res://scripts/widgets/hint_item.gd" id="1_hi"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="2_bold"]
+
+[sub_resource type="StyleBoxFlat" id="sb_pill"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0.03, 0.03, 0.04, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.5, 0.56, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HintItem" type="HBoxContainer" unique_id=1235040492]
+mouse_filter = 2
+theme_override_constants/separation = 9
+script = ExtResource("1_hi")
+
+[node name="Chip" type="ColorRect" parent="." unique_id=1746386211]
+visible = false
+custom_minimum_size = Vector2(12, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.15, 0.8, 0.25, 1)
+
+[node name="KeyPill" type="PanelContainer" parent="." unique_id=1017663658]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_pill")
+
+[node name="KeyLabel" type="Label" parent="KeyPill" unique_id=903832264]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 0.96, 1)
+theme_override_fonts/font = ExtResource("2_bold")
+theme_override_font_sizes/font_size = 14
+text = "ENTER"
+
+[node name="Text" type="Label" parent="." unique_id=2102720282]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 0.96, 1)
+theme_override_fonts/font = ExtResource("2_bold")
+theme_override_font_sizes/font_size = 18
+text = "ACCIÓN"

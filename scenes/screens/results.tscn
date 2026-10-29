@@ -1,12 +1,564 @@
 [gd_scene format=3 uid="uid://bgsusrxoojc40"]
 
-[ext_resource type="Script" path="res://scripts/screens/results.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cc6y86h583a22" path="res://scripts/screens/results.gd" id="1_res"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_backdrop.tscn" id="2_bd"]
+[ext_resource type="PackedScene" uid="uid://2pd5vusebxp6" path="res://scenes/widgets/hint_item.tscn" id="3_hint"]
+[ext_resource type="Script" uid="uid://b15n0fhtm75nq" path="res://scripts/widgets/diamond_pattern.gd" id="4_pattern"]
+[ext_resource type="Script" uid="uid://bd5rkw7nv1b6c" path="res://scripts/widgets/medallion.gd" id="5_medal"]
+[ext_resource type="Script" uid="uid://dxm8eoml1e6mw" path="res://scripts/widgets/instrument_icon.gd" id="6_icon"]
+[ext_resource type="Script" uid="uid://bki2telx8q807" path="res://scripts/widgets/rating_row.gd" id="7_rating"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="8_bold"]
 
-[node name="Results" type="Control"]
+[sub_resource type="Gradient" id="g_banner"]
+colors = PackedColorArray(0.02, 0.07, 0.34, 0.97, 0.01, 0.03, 0.17, 0.97)
+
+[sub_resource type="GradientTexture2D" id="t_banner"]
+gradient = SubResource("g_banner")
+width = 4
+height = 256
+fill_to = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_badge"]
+bg_color = Color(0.05, 0.05, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.92, 0.97, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="sb_block"]
+bg_color = Color(0.08, 0.26, 0.36, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.75, 0.85, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_rank"]
+bg_color = Color(0.62, 0.52, 0.08, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_solo"]
+bg_color = Color(0.03, 0.05, 0.1, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.88, 0.82, 0.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_board"]
+bg_color = Color(0.02, 0.03, 0.08, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.46, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_edit"]
+content_margin_left = 10.0
+bg_color = Color(0.04, 0.05, 0.09, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.52, 0.6, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_edit_focus"]
+content_margin_left = 10.0
+bg_color = Color(0.06, 0.07, 0.12, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+bg_color = Color(0.88, 0.82, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.35, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_pressed"]
+bg_color = Color(0.7, 0.65, 0.05, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_hover"]
+bg_color = Color(1, 0.95, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_disabled"]
+bg_color = Color(0.3, 0.31, 0.36, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="Gradient" id="g_bar"]
+colors = PackedColorArray(0, 0.14, 0.62, 1, 0.04, 0.05, 0.3, 1)
+
+[sub_resource type="GradientTexture2D" id="t_bar"]
+gradient = SubResource("g_bar")
+width = 256
+height = 4
+
+[node name="Results" type="Control" unique_id=1122644706]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_script")
+script = ExtResource("1_res")
+
+[node name="Backdrop" parent="." unique_id=584132710 instance=ExtResource("2_bd")]
+layout_mode = 1
+tint = Color(0.12, 0.22, 0.7, 1)
+photo_brightness = 0.32
+with_fireflies = false
+
+[node name="Banner" type="TextureRect" parent="." unique_id=1831395745]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 150.0
+mouse_filter = 2
+texture = SubResource("t_banner")
+expand_mode = 1
+
+[node name="Pattern" type="Control" parent="Banner" unique_id=1432469051]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_pattern")
+
+[node name="Line" type="ColorRect" parent="Banner" unique_id=1825560853]
+layout_mode = 0
+offset_top = 148.0
+offset_right = 1152.0
+offset_bottom = 150.0
+mouse_filter = 2
+color = Color(0.85, 0.9, 1, 0.9)
+
+[node name="Title" type="Label" parent="." unique_id=1886039358]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 14.0
+offset_right = 1152.0
+offset_bottom = 74.0
+theme_override_colors/font_color = Color(0.94, 0.95, 0.98, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 44
+text = "TÍTULO DE LA CANCIÓN"
+horizontal_alignment = 1
+
+[node name="ScoreRow" type="HBoxContainer" parent="." unique_id=19287554]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 84.0
+offset_right = 1152.0
+offset_bottom = 140.0
+mouse_filter = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Badge" type="Panel" parent="ScoreRow" unique_id=127563060]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_badge")
+
+[node name="BadgeLabel" type="Label" parent="ScoreRow/Badge" unique_id=562258493]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = 42.0
+offset_bottom = 34.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 20
+text = "GB"
+
+[node name="ScoreLabel" type="Label" parent="ScoreRow" unique_id=1459221669]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 54
+text = "0"
+
+[node name="StarsTop" type="Control" parent="ScoreRow" unique_id=2039583442]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(191.5, 39)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 30.0
+
+[node name="Medallion" type="Control" parent="." unique_id=1607560585]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 88)
+anchors_preset = 0
+offset_left = 1030.0
+offset_top = 28.0
+offset_right = 1118.0
+offset_bottom = 116.0
+pivot_offset = Vector2(44, 44)
+mouse_filter = 2
+script = ExtResource("5_medal")
+
+[node name="Block" type="Panel" parent="." unique_id=1623326576]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 50.0
+offset_top = 176.0
+offset_right = 380.0
+offset_bottom = 328.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_block")
+
+[node name="AccLabel" type="Label" parent="Block" unique_id=197314923]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 12.0
+offset_top = -17.0
+offset_right = 312.0
+offset_bottom = 96.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 84
+text = "0%"
+
+[node name="InstLabel" type="Label" parent="Block" unique_id=1829957771]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 71.0
+offset_right = 314.0
+offset_bottom = 110.0
+theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 28
+text = "GUITARRA"
+
+[node name="RankBar" type="Panel" parent="Block" unique_id=600343255]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 118.0
+offset_right = 330.0
+offset_bottom = 152.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_rank")
+
+[node name="RankLabel" type="Label" parent="Block/RankBar" unique_id=1245897202]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 330.0
+offset_bottom = 34.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 22
+text = "BIEN HECHO"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="." unique_id=230102913]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 54.0
+offset_top = 338.0
+offset_right = 380.0
+offset_bottom = 364.0
+theme_override_colors/font_color = Color(0.93, 0.94, 0.96, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 20
+text = "COMBO MÁXIMO  x0"
+
+[node name="NotesLabel" type="Label" parent="." unique_id=1046219689]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 54.0
+offset_top = 368.0
+offset_right = 380.0
+offset_bottom = 394.0
+theme_override_colors/font_color = Color(0.93, 0.94, 0.96, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 20
+text = "NOTAS  0 / 0"
+
+[node name="Solo" type="Panel" parent="." unique_id=491300811]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 50.0
+offset_top = 406.0
+offset_right = 380.0
+offset_bottom = 530.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_solo")
+
+[node name="ScoreCaption" type="Label" parent="Solo" unique_id=1748696877]
+layout_mode = 0
+offset_top = 8.0
+offset_right = 330.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 18
+text = "PUNTOS"
+horizontal_alignment = 1
+metadata/en = "SCORE"
+
+[node name="SoloIcon" type="Control" parent="Solo" unique_id=1929148382]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 0
+offset_left = 34.0
+offset_top = 40.0
+offset_right = 80.0
+offset_bottom = 86.0
+mouse_filter = 2
+script = ExtResource("6_icon")
+
+[node name="ScoreCardLabel" type="Label" parent="Solo" unique_id=2029058413]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 92.0
+offset_top = 31.0
+offset_right = 314.0
+offset_bottom = 91.0
+theme_override_colors/font_color = Color(0.55, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 44
+text = "0"
+
+[node name="StarsCard" type="Control" parent="Solo" unique_id=217442507]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(154, 31.2)
+anchors_preset = 0
+offset_left = 88.0
+offset_top = 92.0
+offset_right = 220.0
+offset_bottom = 124.0
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 24.0
+
+[node name="Board" type="Panel" parent="." unique_id=861909634]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 410.0
+offset_top = 176.0
+offset_right = 1110.0
+offset_bottom = 526.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_board")
+
+[node name="BoardTitle" type="Label" parent="Board" unique_id=1045125685]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 10.0
+offset_right = 500.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 24
+text = "TABLA DE POSICIONES"
+metadata/en = "LEADERBOARD"
+
+[node name="HeadRank" type="Label" parent="Board" unique_id=1816512378]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 48.0
+offset_right = 50.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "#"
+
+[node name="HeadPlayer" type="Label" parent="Board" unique_id=212094487]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 48.0
+offset_right = 266.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "JUGADOR"
+metadata/en = "PLAYER"
+
+[node name="HeadScore" type="Label" parent="Board" unique_id=1434813462]
+layout_mode = 0
+offset_left = 270.0
+offset_top = 48.0
+offset_right = 400.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "PUNTOS"
+horizontal_alignment = 2
+metadata/en = "SCORE"
+
+[node name="HeadAccuracy" type="Label" parent="Board" unique_id=1379141357]
+layout_mode = 0
+offset_left = 410.0
+offset_top = 48.0
+offset_right = 490.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "%"
+horizontal_alignment = 2
+
+[node name="HeadCombo" type="Label" parent="Board" unique_id=677503150]
+layout_mode = 0
+offset_left = 500.0
+offset_top = 48.0
+offset_right = 580.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "COMBO"
+horizontal_alignment = 2
+
+[node name="HeadDate" type="Label" parent="Board" unique_id=1267518383]
+layout_mode = 0
+offset_left = 596.0
+offset_top = 48.0
+offset_right = 696.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 14
+text = "FECHA"
+metadata/en = "DATE"
+
+[node name="Separator" type="ColorRect" parent="Board" unique_id=1821430702]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 70.0
+offset_right = 688.0
+offset_bottom = 71.0
+mouse_filter = 2
+color = Color(0.42, 0.46, 0.6, 0.8)
+
+[node name="BoardRows" type="Control" parent="Board" unique_id=736207942]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_top = 76.0
+offset_right = 700.0
+offset_bottom = 346.0
+mouse_filter = 2
+
+[node name="NameEdit" type="LineEdit" parent="." unique_id=1232979823]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 410.0
+offset_top = 536.0
+offset_right = 750.0
+offset_bottom = 576.0
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_edit")
+theme_override_styles/focus = SubResource("sb_edit_focus")
+placeholder_text = "Tu nombre"
+max_length = 16
+
+[node name="SaveBtn" type="Button" parent="." unique_id=183210265]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 764.0
+offset_top = 536.0
+offset_right = 994.0
+offset_bottom = 576.0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.05, 0.05, 0.06, 1)
+theme_override_colors/font_pressed_color = Color(0.05, 0.05, 0.06, 1)
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.06, 1)
+theme_override_colors/font_disabled_color = Color(0.75, 0.76, 0.8, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn_pressed")
+theme_override_styles/hover = SubResource("sb_btn_hover")
+theme_override_styles/disabled = SubResource("sb_btn_disabled")
+text = "GUARDAR PUNTAJE"
+metadata/en = "SAVE SCORE"
+
+[node name="BottomBar" type="TextureRect" parent="." unique_id=585844867]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 588.0
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+texture = SubResource("t_bar")
+expand_mode = 1
+
+[node name="Pattern" type="Control" parent="BottomBar" unique_id=390550230]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_pattern")
+
+[node name="Hints" type="HBoxContainer" parent="BottomBar" unique_id=1034605016]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 14.0
+offset_right = 700.0
+offset_bottom = 48.0
+mouse_filter = 2
+theme_override_constants/separation = 60
+
+[node name="HintContinue" parent="BottomBar/Hints" unique_id=1238118487 instance=ExtResource("3_hint")]
+layout_mode = 2
+text = "CONTINUAR"
+font_size = 22
+metadata/en = "CONTINUE"
+
+[node name="HintRestart" parent="BottomBar/Hints" unique_id=1017788049 instance=ExtResource("3_hint")]
+layout_mode = 2
+chip_color = Color(0.95, 0.85, 0.1, 1)
+key = "R"
+text = "REINICIAR"
+font_size = 22
+metadata/en = "RESTART"

@@ -26,27 +26,35 @@ const LANE_COLORS := [
 
 const INSTRUMENT_IDS := ["guitarra", "bajo", "batería", "microfono"]
 
-static var _fonts: Dictionary = {}
+const FONT_BOLD := preload("res://assets/ui/font_bold.tres")
+const FONT_REGULAR := preload("res://assets/ui/font_regular.tres")
+const FONT_ITALIC := preload("res://assets/ui/font_italic.tres")
 
 
 # ── Tipografía ───────────────────────────────────────────────────────────────
 
-## Fuente de sistema en negrita (o normal). Si el equipo no tiene ninguna de las
-## familias, Godot usa la fuente por defecto.
+## Fuentes de sistema (recursos en assets/ui/): negrita, normal e itálica. Si el equipo
+## no tiene ninguna de las familias, Godot usa la fuente por defecto.
 static func font(bold: bool = true, italic: bool = false) -> Font:
-	var key: String = "%s_%s" % [str(bold), str(italic)]
-	if _fonts.has(key):
-		return _fonts[key] as Font
-	var f := SystemFont.new()
 	if bold:
-		f.font_names = PackedStringArray(["Gotham", "Montserrat", "Arial Black", "Segoe UI Black", "Segoe UI", "Arial"])
-		f.font_weight = 800
-	else:
-		f.font_names = PackedStringArray(["Gotham", "Montserrat", "Segoe UI", "Arial"])
-		f.font_weight = 500
-	f.font_italic = italic
-	_fonts[key] = f
-	return f
+		return FONT_BOLD
+	return FONT_ITALIC if italic else FONT_REGULAR
+
+
+## Pone el idioma elegido en los nodos de una escena que tengan el metadato "en"
+## (Inspector → Metadata → en). El texto escrito en la escena es el español; se
+## guarda como metadato "es" la primera vez para poder volver a él.
+static func localize(root: Node) -> void:
+	_localize_rec(root, GameState.current_language == "en")
+
+
+static func _localize_rec(n: Node, english: bool) -> void:
+	if n.has_meta("en") and ("text" in n):
+		if not n.has_meta("es"):
+			n.set_meta("es", str(n.get("text")))
+		n.set("text", str(n.get_meta("en")) if english else str(n.get_meta("es")))
+	for c in n.get_children():
+		_localize_rec(c, english)
 
 
 ## Fuente propia del juego (logo).
@@ -295,37 +303,7 @@ static func instrument_color(id: String) -> Color:
 	return Color(0.9, 0.9, 0.9)
 
 
-# ── Componentes pequeños ─────────────────────────────────────────────────────
-
-## Ayuda de teclas de la barra inferior: [chip de color] [TECLA] texto.
-## Devuelve el ancho ocupado para poder encadenar varias.
-static func add_hint(parent: Control, pos: Vector2, chip: Color, key: String, text: String, size: int = 18) -> float:
-	var x: float = pos.x
-	var chip_rect := ColorRect.new()
-	chip_rect.color = chip
-	chip_rect.position = Vector2(x, pos.y + 2.0)
-	chip_rect.size = Vector2(12.0, float(size) + 6.0)
-	chip_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(chip_rect)
-	x += 20.0
-	if key != "":
-		var kw: float = text_width(key, size - 4) + 16.0
-		var pill := Panel.new()
-		pill.add_theme_stylebox_override("panel", box(Color(0.03, 0.03, 0.04), 6, Color(0.5, 0.5, 0.56), 1))
-		pill.position = Vector2(x, pos.y)
-		pill.size = Vector2(kw, float(size) + 10.0)
-		pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var kl := label(key, size - 4, WHITE_SOFT)
-		kl.position = Vector2(8.0, 3.0)
-		pill.add_child(kl)
-		parent.add_child(pill)
-		x += kw + 10.0
-	var tl := label(text, size, WHITE_SOFT)
-	tl.position = Vector2(x, pos.y + 4.0)
-	parent.add_child(tl)
-	x += text_width(text, size)
-	return x - pos.x
-
+# ── Animaciones ──────────────────────────────────────────────────────────────
 
 ## Entrada suave: el nodo llega deslizándose desde `from_offset` mientras aparece.
 ## Debe llamarse con el nodo ya dentro del árbol.

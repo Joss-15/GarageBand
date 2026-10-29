@@ -1,12 +1,11 @@
 ## highway.gd
-## Carril en perspectiva de un jugador: un ColorRect con el shader highway.gdshader
-## (banda eléctrica), la barra cromada de la línea de golpe con las teclas, y las
+## Carril en perspectiva de un jugador (nodo HighwayRoot de gameplay.tscn): el
+## ColorRect "Road" con el shader highway.gdshader (banda eléctrica), la barra
+## cromada "Bar" de la línea de golpe con las teclas, los 5 receptores, y las
 ## funciones que convierten "tiempo restante para el golpe" en posición/escala
-## de pantalla para las notas.
+## de pantalla para las notas. Los nodos viven en la escena; aquí solo se
+## calcula la geometría y se alimentan los parámetros del shader.
 extends Node2D
-
-const RB = preload("res://scripts/core/rb_theme.gd")
-const ROAD_SHADER = preload("res://shaders/highway.gdshader")
 
 var center_x: float = 576.0
 var hit_y: float = 566.0
@@ -16,43 +15,12 @@ var lane_count: int = 5
 var far_z: float = 2.5
 var fall_time: float = 2.0
 
-var _road: ColorRect = null
+@onready var _road: ColorRect = $Road
+@onready var _bar: Node2D = $Bar
+
 var _mat: ShaderMaterial = null
-var _bar: Node2D = null
 var _energy := PackedFloat32Array([0.0, 0.0, 0.0, 0.0, 0.0])
 var _pulse: float = 0.0
-
-
-## Barra cromada con las teclas de cada carril (se dibuja sobre el carril).
-class Bar extends Node2D:
-	const RB = preload("res://scripts/core/rb_theme.gd")
-	var hw: Node2D = null
-
-	func _draw() -> void:
-		if hw == null:
-			return
-		var total_w: float = hw.lane_w * float(hw.lane_count)
-		var x0: float = hw.center_x - total_w * 0.5 - 12.0
-		var x1: float = hw.center_x + total_w * 0.5 + 12.0
-		var y: float = hw.hit_y
-		draw_rect(Rect2(x0, y - 22.0, x1 - x0, 44.0), Color(0.07, 0.075, 0.09))
-		draw_rect(Rect2(x0, y - 22.0, x1 - x0, 4.0), Color(0.80, 0.83, 0.90))
-		draw_rect(Rect2(x0, y + 18.0, x1 - x0, 4.0), Color(0.55, 0.58, 0.66))
-		draw_rect(Rect2(x0, y - 18.0, x1 - x0, 3.0), Color(1.0, 1.0, 1.0, 0.07))
-		draw_rect(Rect2(x0 - 6.0, y - 24.0, 8.0, 48.0), Color(1.0, 0.55, 0.12))
-		draw_rect(Rect2(x1 - 2.0, y - 24.0, 8.0, 48.0), Color(1.0, 0.55, 0.12))
-		var f: Font = RB.font(true)
-		for i in hw.lane_count:
-			var key_name: String = "?"
-			var evs: Array[InputEvent] = InputMap.action_get_events("lane_%d" % i)
-			if evs.size() > 0 and evs[0] is InputEventKey:
-				var k := evs[0] as InputEventKey
-				var code: int = int(k.physical_keycode) if int(k.physical_keycode) != 0 else int(k.keycode)
-				key_name = OS.get_keycode_string(code as Key)
-			var cx: float = hw.center_x + (float(i) - (float(hw.lane_count) - 1.0) * 0.5) * hw.lane_w
-			var col: Color = RB.LANE_COLORS[i]
-			draw_string_outline(f, Vector2(cx - 30.0, y + 54.0), key_name, HORIZONTAL_ALIGNMENT_CENTER, 60.0, 24, 6, Color(0.0, 0.0, 0.0, 0.9))
-			draw_string(f, Vector2(cx - 30.0, y + 54.0), key_name, HORIZONTAL_ALIGNMENT_CENTER, 60.0, 24, col)
 
 
 func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z: float, p_fall_time: float) -> void:
@@ -64,12 +32,9 @@ func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z
 	# y(p=1) = p_top_y  =>  horizonte virtual donde convergen los bordes
 	horizon_y = (p_top_y - hit_y / far_z) / (1.0 - 1.0 / far_z)
 
-	_road = ColorRect.new()
 	_road.position = Vector2.ZERO
 	_road.size = vp
-	_road.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_mat = ShaderMaterial.new()
-	_mat.shader = ROAD_SHADER
+	_mat = _road.material as ShaderMaterial
 	_mat.set_shader_parameter("view_size", vp)
 	_mat.set_shader_parameter("center_x", center_x)
 	_mat.set_shader_parameter("hit_y", hit_y)
@@ -79,13 +44,14 @@ func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z
 	_mat.set_shader_parameter("far_z", far_z)
 	_mat.set_shader_parameter("fall_time", fall_time)
 	_mat.set_shader_parameter("beat_period", 0.5)
+	_mat.set_shader_parameter("song_time", 0.0)
+	_mat.set_shader_parameter("pulse", 0.0)
 	_mat.set_shader_parameter("lane_energy", _energy)
-	_road.material = _mat
-	add_child(_road)
 
-	_bar = Bar.new()
-	_bar.hw = self
-	add_child(_bar)
+	_bar.center_x = center_x
+	_bar.hit_y = hit_y
+	_bar.lane_w = lane_w
+	_bar.lane_count = lane_count
 
 
 # ── Proyección ───────────────────────────────────────────────────────────────

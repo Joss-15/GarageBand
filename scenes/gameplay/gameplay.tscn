@@ -1,12 +1,19 @@
 [gd_scene format=3 uid="uid://bpfccrqogeywn"]
 
-[ext_resource type="Script" path="res://scripts/gameplay/gameplay.gd" id="1_script"]
-[ext_resource type="Script" path="res://scripts/gameplay/highway.gd" id="2_highway"]
+[ext_resource type="Script" uid="uid://dq3t30cdxdq7" path="res://scripts/gameplay/gameplay.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cyx108dcj2ajc" path="res://scripts/gameplay/highway.gd" id="2_highway"]
+[ext_resource type="Script" uid="uid://d4mjuh7rgpdoq" path="res://scripts/gameplay/highway_bar.gd" id="3_bar"]
 [ext_resource type="Shader" path="res://shaders/gameplay.gdshader" id="5_4bh5q"]
 [ext_resource type="Shader" path="res://shaders/sky.gdshader" id="5_101mb"]
-[ext_resource type="Texture2D" path="res://assets/sprites/sky.png" id="5_e124b"]
-[ext_resource type="PackedScene" path="res://scenes/characters/nat.tscn" id="5_ocj2s"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ground.png" id="6_din8e"]
+[ext_resource type="Texture2D" uid="uid://8fndc5yi7go6" path="res://assets/sprites/sky.png" id="5_e124b"]
+[ext_resource type="PackedScene" uid="uid://bebgeh7l2pgh0" path="res://scenes/characters/nat.tscn" id="5_ocj2s"]
+[ext_resource type="Texture2D" uid="uid://cv0nptee1jy0q" path="res://assets/sprites/ground.png" id="6_din8e"]
+[ext_resource type="Shader" path="res://shaders/highway.gdshader" id="6_road"]
+[ext_resource type="PackedScene" uid="uid://cfhgsl0mn6gq6" path="res://scenes/gameplay/lane_receptor.tscn" id="7_receptor"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/stage_fx.tscn" id="8_fx"]
+[ext_resource type="PackedScene" uid="uid://cvlxr64u3akrd" path="res://scenes/widgets/gameplay_hud.tscn" id="9_hud"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/pause_menu.tscn" id="10_pause"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="11_bold"]
 
 [sub_resource type="Environment" id="Environment_ct7aa"]
 background_mode = 3
@@ -18,6 +25,15 @@ glow_intensity = 4.26
 glow_blend_mode = 0
 glow_hdr_threshold = 0.85
 
+[sub_resource type="Gradient" id="g_floor"]
+colors = PackedColorArray(0.03, 0.05, 0.14, 1, 0, 0, 0.02, 1)
+
+[sub_resource type="GradientTexture2D" id="t_floor"]
+gradient = SubResource("g_floor")
+width = 4
+height = 256
+fill_to = Vector2(0, 1)
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hbo4f"]
 shader = ExtResource("5_101mb")
 shader_parameter/scroll_speed = 0.01
@@ -26,20 +42,53 @@ shader_parameter/scroll_speed = 0.01
 shader = ExtResource("5_4bh5q")
 shader_parameter/scroll_speed = 0.5
 
-[node name="Gameplay" type="Node2D"]
+[sub_resource type="ShaderMaterial" id="mat_road"]
+resource_local_to_scene = true
+shader = ExtResource("6_road")
+shader_parameter/view_size = Vector2(1152, 648)
+shader_parameter/center_x = 576.0
+shader_parameter/hit_y = 566.0
+shader_parameter/horizon_y = 19.3333
+shader_parameter/lane_w = 88.0
+shader_parameter/lane_count = 5.0
+shader_parameter/far_z = 2.5
+shader_parameter/song_time = 0.0
+shader_parameter/beat_period = 0.5
+shader_parameter/fall_time = 2.0
+shader_parameter/pulse = 0.0
+shader_parameter/lane_energy = PackedFloat32Array(0, 0, 0, 0, 0)
+
+[node name="Gameplay" type="Node2D" unique_id=1226440244]
 script = ExtResource("1_script")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1672471965]
 environment = SubResource("Environment_ct7aa")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1687733487]
 offset_right = 1152.0
 offset_bottom = 648.0
 color = Color(0, 0, 0, 1)
 
-[node name="BackFX" type="Node2D" parent="."]
+[node name="BackFX" type="Node2D" parent="." unique_id=897859399]
 
-[node name="Sky" type="TextureRect" parent="."]
+[node name="Floor" type="TextureRect" parent="BackFX" unique_id=183099756]
+offset_top = 1.0
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+texture = SubResource("t_floor")
+expand_mode = 1
+
+[node name="StageFx" parent="BackFX" unique_id=921274803 instance=ExtResource("8_fx")]
+unique_name_in_owner = true
+beam_count = 5
+origin_y = 226.0
+length = 448.0
+beam_spread = 260.0
+base_alpha = 0.09
+
+[node name="Sky" type="TextureRect" parent="." unique_id=1395065657]
+visible = false
 texture_repeat = 2
 material = SubResource("ShaderMaterial_hbo4f")
 offset_left = -141.0
@@ -50,7 +99,8 @@ scale = Vector2(0.29, 0.29)
 texture = ExtResource("5_e124b")
 stretch_mode = 1
 
-[node name="Ground" type="TextureRect" parent="."]
+[node name="Ground" type="TextureRect" parent="." unique_id=837119629]
+visible = false
 texture_repeat = 2
 material = SubResource("ShaderMaterial_e124b")
 offset_left = -46.999985
@@ -62,15 +112,65 @@ texture = ExtResource("6_din8e")
 expand_mode = 1
 stretch_mode = 1
 
-[node name="Nat" parent="." instance=ExtResource("5_ocj2s")]
+[node name="Nat" parent="." unique_id=1273710029 instance=ExtResource("5_ocj2s")]
+visible = false
 position = Vector2(150, 133.75)
 scale = Vector2(0.25, 0.25)
 
-[node name="Actors" type="Node2D" parent="."]
+[node name="Actors" type="Node2D" parent="." unique_id=65293298]
+visible = false
 
-[node name="HighwayRoot" type="Node2D" parent="."]
+[node name="HighwayRoot" type="Node2D" parent="." unique_id=1614882782]
 script = ExtResource("2_highway")
 
-[node name="Notes" type="Node2D" parent="."]
+[node name="Road" type="ColorRect" parent="HighwayRoot" unique_id=1696370910]
+material = SubResource("mat_road")
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+[node name="Bar" type="Node2D" parent="HighwayRoot" unique_id=1979430900]
+script = ExtResource("3_bar")
+font = ExtResource("11_bold")
+
+[node name="Receptor0" parent="HighwayRoot" unique_id=980515285 instance=ExtResource("7_receptor")]
+unique_name_in_owner = true
+position = Vector2(400, 566)
+lane_color = Color(0.14, 0.86, 0.28, 1)
+
+[node name="Receptor1" parent="HighwayRoot" unique_id=1190010078 instance=ExtResource("7_receptor")]
+unique_name_in_owner = true
+position = Vector2(488, 566)
+lane_color = Color(0.95, 0.16, 0.16, 1)
+lane_index = 1
+
+[node name="Receptor2" parent="HighwayRoot" unique_id=1629056256 instance=ExtResource("7_receptor")]
+unique_name_in_owner = true
+position = Vector2(576, 566)
+lane_color = Color(0.98, 0.86, 0.1, 1)
+lane_index = 2
+
+[node name="Receptor3" parent="HighwayRoot" unique_id=1800948581 instance=ExtResource("7_receptor")]
+unique_name_in_owner = true
+position = Vector2(664, 566)
+lane_color = Color(0.18, 0.44, 0.98, 1)
+lane_index = 3
+
+[node name="Receptor4" parent="HighwayRoot" unique_id=972357741 instance=ExtResource("7_receptor")]
+unique_name_in_owner = true
+position = Vector2(752, 566)
+lane_color = Color(1, 0.56, 0.1, 1)
+lane_index = 4
+
+[node name="Notes" type="Node2D" parent="." unique_id=1628048803]
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1248345370]
+
+[node name="HudLayer" type="CanvasLayer" parent="." unique_id=175956361]
+layer = 5
+
+[node name="Hud" parent="HudLayer" unique_id=1716717539 instance=ExtResource("9_hud")]
+unique_name_in_owner = true
+
+[node name="PauseMenu" parent="." unique_id=667472099 instance=ExtResource("10_pause")]
+unique_name_in_owner = true

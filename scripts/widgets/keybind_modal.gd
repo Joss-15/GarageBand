@@ -5,63 +5,23 @@
 extends Control
 
 const RB = preload("res://scripts/core/rb_theme.gd")
-const MENU_LIST = preload("res://scripts/widgets/rb_menu_list.gd")
 
 signal closed(applied: bool)
 
 var _staged: Array[int] = []
 var _capturing: int = -1
-var _panel: Panel = null
-var _list: Control = null
-var _hint: Label = null
 var _tween: Tween = null
+
+# Nodos de la escena keybind_modal.tscn
+@onready var _panel: Panel = %Panel
+@onready var _list: Control = %List
+@onready var _hint: Label = %Hint
 
 
 func _ready() -> void:
-	visible = false
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.0, 0.03, 0.72)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(dim)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	var vp: Vector2 = get_viewport_rect().size
-	_panel = Panel.new()
-	_panel.size = Vector2(620.0, 470.0)
-	_panel.position = (vp - _panel.size) * 0.5
-	var sb := RB.box(Color(0.05, 0.06, 0.11, 0.97), 14, RB.GOLD, 3)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.6)
-	sb.shadow_size = 18
-	_panel.add_theme_stylebox_override("panel", sb)
-	add_child(_panel)
-
-	var title := RB.label(RB.t("TECLAS", "KEY BINDINGS"), 38, Color.WHITE)
-	title.position = Vector2(34.0, 18.0)
-	_panel.add_child(title)
-
-	var bar := ColorRect.new()
-	bar.color = Color(0.78, 0.08, 0.08)
-	bar.position = Vector2(34.0, 72.0)
-	bar.size = Vector2(552.0, 3.0)
-	_panel.add_child(bar)
-
-	_list = MENU_LIST.new()
-	_list.font_size = 30
-	_list.row_height = 44.0
-	_list.slab_width = 552.0
-	_list.slab_pad = 0.0
-	_list.position = Vector2(34.0, 88.0)
-	_list.size = Vector2(552.0, 320.0)
-	_panel.add_child(_list)
+	RB.localize(self)
 	_list.activated.connect(_on_activated)
 	_list.cancelled.connect(_on_cancel)
-
-	_hint = RB.label("", 16, RB.GRAY_TXT, false, true)
-	_hint.position = Vector2(34.0, 428.0)
-	_panel.add_child(_hint)
 
 
 func open() -> void:

@@ -1,0 +1,169 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/widgets/rb_backdrop.gd" id="1_bd"]
+[ext_resource type="Texture2D" path="res://assets/images/fondito.jpg" id="2_photo"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/stage_fx.tscn" id="3_fx"]
+
+[sub_resource type="Gradient" id="g_wash"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0, 0.02, 0.12, 0.5, 0, 0, 0.03, 0.88)
+
+[sub_resource type="GradientTexture2D" id="t_wash"]
+gradient = SubResource("g_wash")
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+width = 4
+height = 256
+
+[sub_resource type="Gradient" id="g_glow_a"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.25, 0.4, 1, 0.4, 0.25, 0.4, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="t_glow_a"]
+gradient = SubResource("g_glow_a")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="g_glow_b"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.65, 0.25, 0.95, 0.4, 0.65, 0.25, 0.95, 0)
+
+[sub_resource type="GradientTexture2D" id="t_glow_b"]
+gradient = SubResource("g_glow_b")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="CanvasItemMaterial" id="mat_add"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="g_dot"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="t_dot"]
+gradient = SubResource("g_dot")
+width = 24
+height = 24
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="g_ramp"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="Gradient" id="g_vig"]
+offsets = PackedFloat32Array(0.4, 1)
+colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0.92)
+
+[sub_resource type="GradientTexture2D" id="t_vig"]
+gradient = SubResource("g_vig")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.85)
+
+[node name="RBBackdrop" type="Control"]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_bd")
+
+[node name="Base" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.015, 0.05, 1)
+
+[node name="Photo" type="TextureRect" parent="."]
+modulate = Color(0.165, 0.231, 0.495, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_photo")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Wash" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("t_wash")
+expand_mode = 1
+
+[node name="GlowA" type="TextureRect" parent="."]
+material = SubResource("mat_add")
+layout_mode = 0
+offset_left = -120.0
+offset_top = 40.0
+offset_right = 520.0
+offset_bottom = 680.0
+mouse_filter = 2
+texture = SubResource("t_glow_a")
+expand_mode = 1
+
+[node name="GlowB" type="TextureRect" parent="."]
+material = SubResource("mat_add")
+layout_mode = 0
+offset_left = 632.0
+offset_top = 168.0
+offset_right = 1272.0
+offset_bottom = 808.0
+mouse_filter = 2
+texture = SubResource("t_glow_b")
+expand_mode = 1
+
+[node name="StageFx" parent="." instance=ExtResource("3_fx")]
+
+[node name="Fireflies" type="CPUParticles2D" parent="."]
+position = Vector2(576, 324)
+amount = 38
+lifetime = 9.0
+preprocess = 9.0
+texture = SubResource("t_dot")
+emission_shape = 3
+emission_rect_extents = Vector2(576, 324)
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 4.0
+initial_velocity_max = 16.0
+scale_amount_min = 0.5
+scale_amount_max = 1.3
+color = Color(1, 0.95, 0.45, 0.9)
+color_ramp = SubResource("g_ramp")
+
+[node name="Vignette" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("t_vig")
+expand_mode = 1

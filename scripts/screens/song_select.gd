@@ -1,23 +1,20 @@
 ## song_select.gd
-## Biblioteca musical: lista alfabética seccionada por letra, portada y dificultad
-## por instrumento a la derecha, y preescucha (mitad de la canción, volumen bajo)
-## de la canción resaltada. Las canciones se leen de res://songs/ (ver song_library.gd).
+## Biblioteca musical (escena song_select.tscn): lista alfabética seccionada por
+## letra, portada y dificultad por instrumento a la derecha, y preescucha (mitad
+## de la canción, volumen bajo) de la canción resaltada. Las canciones se leen de
+## res://songs/ (ver song_library.gd). La interfaz fija vive en la escena; aquí
+## solo se crean las filas de canciones y se maneja la selección.
 extends Control
 
 const RB = preload("res://scripts/core/rb_theme.gd")
-const BACKDROP = preload("res://scripts/widgets/rb_backdrop.gd")
 const SONG_LIB = preload("res://scripts/core/song_library.gd")
-const PLAYER_TAB = preload("res://scripts/widgets/player_tab.gd")
-const ICON = preload("res://scripts/widgets/instrument_icon.gd")
-const RATING = preload("res://scripts/widgets/rating_row.gd")
-const COVER = preload("res://scripts/widgets/cover_art.gd")
+const ROW_SCENE := preload("res://scenes/widgets/song_row.tscn")
+const HEADER_SCENE := preload("res://scenes/widgets/song_header.tscn")
 
-const LIST_POS := Vector2(30.0, 132.0)
 const LIST_SIZE := Vector2(800.0, 404.0)
 const HEADER_H := 46.0
 const SONG_H := 42.0
 const ROW_GAP := 2.0
-const ROW_W := 790.0
 const PREVIEW_DB := -9.0
 
 var _songs: Array = []
@@ -26,37 +23,52 @@ var _selected: int = 0
 var _content_h: float = 0.0
 var _best_cache: Dictionary = {}
 
-var _holder: Control = null
-var _rows_root: Control = null
-var _cursor: Control = null
 var _scroll_tween: Tween = null
 var _cursor_tween: Tween = null
 
-var _sub_label: Label = null
-var _stars_total_label: Label = null
-var _cover: Control = null
-var _best_label: Label = null
-var _best_stars: Control = null
 var _inst_dots: Array = []
-var _hint_bar: Control = null
-var _tab: Control = null
-var _title: Label = null
-var _band_box: Control = null
-var _right_panel: Control = null
-
-var _preview_player: AudioStreamPlayer = null
-var _preview_timer: Timer = null
 var _preview_tween: Tween = null
 var _preview_path: String = ""
 var _loading_path: String = ""
 var _stream_cache: Dictionary = {}
 var _starting: bool = false
 
+# Nodos de la escena song_select.tscn
+@onready var _title: Label = %Title
+@onready var _band_box: Control = %BandBox
+@onready var _player_name: Label = %PlayerName
+@onready var _sub_label: Label = %SubLabel
+@onready var _stars_total_label: Label = %StarsTotal
+@onready var _right_panel: Control = %RightPanel
+@onready var _cover: Control = %Cover
+@onready var _best_label: Label = %BestLabel
+@onready var _best_stars: Control = %BestStars
+@onready var _holder: Control = %Holder
+@onready var _rows_root: Control = %RowsRoot
+@onready var _cursor: Control = %Cursor
+@onready var _hint_bar: Control = %HintBar
+@onready var _tab: Control = %PlayerTab
+@onready var _empty_box: Control = %EmptyBox
+@onready var _preview_player: AudioStreamPlayer = %PreviewPlayer
+@onready var _preview_timer: Timer = %PreviewTimer
+
 
 func _ready() -> void:
 	GameState.play_menu_music()
+	RB.localize(self)
+	_inst_dots = [%Dots0, %Dots1, %Dots2, %Dots3]
+
+	var player: String = GameState.player1_name
+	if player == "P1":
+		player = RB.t("Jugador 1", "Player 1")
+	_player_name.text = player
+	_tab.setup(player, GameState.selected_instrument)
+
+	_holder.gui_input.connect(_on_holder_input)
+	_preview_player.finished.connect(_on_preview_finished)
+	_preview_timer.timeout.connect(_start_preview)
+
 	_songs = SONG_LIB.scan(true)
-	_build_static_ui()
 	if _songs.is_empty():
 		_show_empty()
 		return
@@ -70,178 +82,9 @@ func _ready() -> void:
 	set_process(false)
 
 
-# ── Construcción ─────────────────────────────────────────────────────────────
-
-func _build_static_ui() -> void:
-	var backdrop := BACKDROP.new()
-	backdrop.tint = Color(0.22, 0.30, 0.55)
-	backdrop.photo_brightness = 0.40
-	add_child(backdrop)
-	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	# Velo oscuro para dar contraste a la lista
-	var veil := ColorRect.new()
-	veil.color = Color(0.0, 0.0, 0.02, 0.42)
-	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(veil)
-	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	_title = RB.label(RB.t("BIBLIOTECA MUSICAL", "MUSIC LIBRARY"), 62, Color(0.88, 0.89, 0.92))
-	_title.position = Vector2(42.0, 12.0)
-	add_child(_title)
-
-	# Insignia de banda + nombre del jugador
-	_band_box = Control.new()
-	_band_box.position = Vector2(840.0, 26.0)
-	_band_box.size = Vector2(290.0, 56.0)
-	add_child(_band_box)
-	var badge := Panel.new()
-	badge.add_theme_stylebox_override("panel", RB.box(Color(0.05, 0.05, 0.07), 3, Color(0.9, 0.9, 0.95), 2))
-	badge.size = Vector2(48.0, 48.0)
-	badge.position = Vector2(0.0, 4.0)
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bl := RB.label("GB", 20, Color.WHITE)
-	bl.position = Vector2(8.0, 10.0)
-	badge.add_child(bl)
-	_band_box.add_child(badge)
-	var player: String = GameState.player1_name
-	if player == "P1":
-		player = RB.t("Jugador 1", "Player 1")
-	var pn := RB.label(player, 34, Color.WHITE)
-	pn.position = Vector2(60.0, 6.0)
-	_band_box.add_child(pn)
-
-	# Barra de subtítulo gris
-	var sub_bar := Panel.new()
-	sub_bar.add_theme_stylebox_override("panel", RB.box(Color(0.52, 0.53, 0.56, 0.96), 0))
-	sub_bar.position = Vector2(30.0, 90.0)
-	sub_bar.size = Vector2(1092.0, 34.0)
-	sub_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(sub_bar)
-	var pill := Panel.new()
-	pill.add_theme_stylebox_override("panel", RB.box(Color(0.03, 0.03, 0.04), 5))
-	pill.position = Vector2(40.0, 94.0)
-	pill.size = Vector2(70.0, 26.0)
-	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var pl := RB.label("ENTER", 14, Color.WHITE)
-	pl.position = Vector2(9.0, 3.0)
-	pill.add_child(pl)
-	add_child(pill)
-	_sub_label = RB.label("", 18, Color.WHITE)
-	_sub_label.position = Vector2(120.0, 97.0)
-	add_child(_sub_label)
-	_stars_total_label = RB.label("", 28, Color.WHITE)
-	_stars_total_label.position = Vector2(1010.0, 90.0)
-	add_child(_stars_total_label)
-	var total_star := RATING.new()
-	total_star.count = 1
-	total_star.value = 1
-	total_star.item_size = 26.0
-	total_star.position = Vector2(1080.0, 90.0)
-	add_child(total_star)
-
-	_build_right_panel()
-
-	# Barra de ayuda inferior
-	_hint_bar = Control.new()
-	_hint_bar.position = Vector2(30.0, 544.0)
-	_hint_bar.size = Vector2(1092.0, 32.0)
-	add_child(_hint_bar)
-	var bar_bg := Panel.new()
-	bar_bg.add_theme_stylebox_override("panel", RB.box(Color(0.13, 0.13, 0.15, 0.95), 0))
-	bar_bg.size = _hint_bar.size
-	bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint_bar.add_child(bar_bg)
-	var hx: float = 16.0
-	hx += RB.add_hint(_hint_bar, Vector2(hx, 1.0), Color(0.15, 0.80, 0.25), "ENTER", RB.t("JUGAR CANCIÓN", "PLAY SONG"), 18) + 44.0
-	hx += RB.add_hint(_hint_bar, Vector2(hx, 1.0), Color(0.95, 0.85, 0.10), "← →", RB.t("SIGUIENTE LETRA", "NEXT HEADING"), 18) + 44.0
-	RB.add_hint(_hint_bar, Vector2(hx, 1.0), Color(1.0, 0.55, 0.10), "ESC", RB.t("ATRÁS", "BACK"), 18)
-
-	_tab = PLAYER_TAB.new()
-	_tab.position = Vector2(50.0, 574.0)
-	add_child(_tab)
-	_tab.setup(player, GameState.selected_instrument, "ESC", RB.t("ATRÁS", "BACK"), 340.0)
-
-	_preview_player = AudioStreamPlayer.new()
-	_preview_player.bus = "Master"
-	_preview_player.finished.connect(_on_preview_finished)
-	add_child(_preview_player)
-
-	_preview_timer = Timer.new()
-	_preview_timer.one_shot = true
-	_preview_timer.wait_time = 0.45
-	_preview_timer.timeout.connect(_start_preview)
-	add_child(_preview_timer)
-
-
-func _build_right_panel() -> void:
-	_right_panel = Control.new()
-	_right_panel.position = Vector2(856.0, 98.0)
-	_right_panel.size = Vector2(266.0, 440.0)
-	add_child(_right_panel)
-
-	_cover = COVER.new()
-	_cover.position = Vector2(14.0, 34.0)
-	_cover.size = Vector2(236.0, 236.0)
-	_right_panel.add_child(_cover)
-
-	var best_bg := Panel.new()
-	best_bg.add_theme_stylebox_override("panel", RB.box(Color(0.02, 0.03, 0.06, 0.78), 0, Color(0.4, 0.42, 0.5), 1))
-	best_bg.position = Vector2(14.0, 280.0)
-	best_bg.size = Vector2(236.0, 36.0)
-	best_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_right_panel.add_child(best_bg)
-	_best_label = RB.label("", 18, Color.WHITE)
-	_best_label.position = Vector2(24.0, 285.0)
-	_right_panel.add_child(_best_label)
-	_best_stars = RATING.new()
-	_best_stars.count = 5
-	_best_stars.item_size = 13.0
-	_best_stars.position = Vector2(150.0, 284.0)
-	_right_panel.add_child(_best_stars)
-
-	var rows_bg := Panel.new()
-	rows_bg.add_theme_stylebox_override("panel", RB.box(Color(0.02, 0.03, 0.06, 0.70), 0))
-	rows_bg.position = Vector2(14.0, 324.0)
-	rows_bg.size = Vector2(236.0, 172.0)
-	rows_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_right_panel.add_child(rows_bg)
-	_inst_dots.clear()
-	for i in RB.INSTRUMENT_IDS.size():
-		var id: String = str(RB.INSTRUMENT_IDS[i])
-		var icon := ICON.new()
-		icon.instrument = id
-		icon.size = Vector2(32.0, 32.0)
-		icon.position = Vector2(26.0, 330.0 + float(i) * 41.0)
-		_right_panel.add_child(icon)
-		var nm := RB.label(RB.instrument_name(id), 13, RB.GRAY_TXT)
-		nm.position = Vector2(66.0, 337.0 + float(i) * 41.0)
-		_right_panel.add_child(nm)
-		var dots := RATING.new()
-		dots.count = 5
-		dots.dots = true
-		dots.item_size = 14.0
-		dots.position = Vector2(150.0, 334.0 + float(i) * 41.0)
-		_right_panel.add_child(dots)
-		_inst_dots.append(dots)
-
+# ── Filas de la lista ────────────────────────────────────────────────────────
 
 func _build_list() -> void:
-	_holder = Control.new()
-	_holder.position = LIST_POS
-	_holder.size = LIST_SIZE
-	_holder.clip_contents = true
-	_holder.mouse_filter = Control.MOUSE_FILTER_STOP
-	_holder.gui_input.connect(_on_holder_input)
-	add_child(_holder)
-
-	_rows_root = Control.new()
-	_rows_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_holder.add_child(_rows_root)
-
-	_cursor = _make_cursor()
-	_rows_root.add_child(_cursor)
-
 	var counts: Dictionary = {}
 	for s in _songs:
 		var l: String = str((s as Dictionary)["letter"])
@@ -266,31 +109,6 @@ func _build_list() -> void:
 	_stars_total_label.text = str(SONG_LIB.total_stars())
 
 
-func _make_cursor() -> Control:
-	var c := Control.new()
-	c.size = Vector2(ROW_W, SONG_H)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fill := TextureRect.new()
-	fill.texture = RB.h_gradient(Color(0.90, 0.84, 0.10, 0.96), Color(0.16, 0.14, 0.03, 0.88))
-	fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	fill.stretch_mode = TextureRect.STRETCH_SCALE
-	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.add_child(fill)
-	fill.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var top := ColorRect.new()
-	top.color = Color(1.0, 1.0, 1.0, 0.9)
-	top.size = Vector2(ROW_W, 2.0)
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.add_child(top)
-	var bottom := ColorRect.new()
-	bottom.color = Color(1.0, 1.0, 1.0, 0.9)
-	bottom.position = Vector2(0.0, SONG_H - 2.0)
-	bottom.size = Vector2(ROW_W, 2.0)
-	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.add_child(bottom)
-	return c
-
-
 func _song_stars(song: Dictionary) -> int:
 	var key: String = str(song["name"])
 	if not _best_cache.has(key):
@@ -299,69 +117,24 @@ func _song_stars(song: Dictionary) -> int:
 
 
 func _add_header(letter: String, count: int, y: float) -> void:
-	var row := Control.new()
-	row.position = Vector2(0.0, y)
-	row.size = Vector2(ROW_W, HEADER_H)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bg := ColorRect.new()
-	bg.color = RB.TEAL_BAR
-	bg.size = row.size
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(bg)
-	var edge := ColorRect.new()
-	edge.color = Color(0.45, 0.75, 0.90, 0.9)
-	edge.size = Vector2(5.0, HEADER_H)
-	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(edge)
-	var l := RB.label(letter, 32, Color.WHITE)
-	l.position = Vector2(24.0, 2.0)
-	row.add_child(l)
-	var cl := RB.label("%d %s" % [count, RB.t("CANCIONES" if count != 1 else "CANCIÓN", "SONGS" if count != 1 else "SONG")], 22, Color(0.80, 0.84, 0.90))
-	cl.position = Vector2(470.0, 8.0)
-	row.add_child(cl)
 	var earned: int = 0
 	for s in _songs:
 		var song: Dictionary = s
 		if str(song["letter"]) == letter:
 			earned += _song_stars(song)
-	var sl := RB.label("%d/%d" % [earned, count * 5], 22, Color.WHITE)
-	sl.position = Vector2(ROW_W - 150.0, 8.0)
-	sl.size = Vector2(90.0, 30.0)
-	sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	row.add_child(sl)
-	var star := RATING.new()
-	star.count = 1
-	star.value = 1
-	star.item_size = 24.0
-	star.position = Vector2(ROW_W - 52.0, 8.0)
-	row.add_child(star)
+	var row: Control = HEADER_SCENE.instantiate()
+	row.position = Vector2(0.0, y)
 	_rows_root.add_child(row)
+	row.setup(letter, count, earned)
 
 
 func _add_song_row(index: int, y: float) -> void:
 	var song: Dictionary = _songs[index]
-	var row := Control.new()
+	var row: Control = ROW_SCENE.instantiate()
 	row.position = Vector2(0.0, y)
-	row.size = Vector2(ROW_W, SONG_H)
-	row.mouse_filter = Control.MOUSE_FILTER_STOP
-	row.gui_input.connect(_on_row_input.bind(index))
-	var title := RB.label(str(song["title"]), 25, Color.WHITE)
-	title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.75))
-	title.add_theme_constant_override("outline_size", 5)
-	title.position = Vector2(70.0, 4.0)
-	row.add_child(title)
-	var artist_text: String = str(song["artist"])
-	if artist_text != "":
-		var at := RB.label(artist_text, 20, Color(0.78, 0.80, 0.86), false, true)
-		at.position = Vector2(70.0 + RB.text_width(str(song["title"]), 25) + 16.0, 8.0)
-		row.add_child(at)
-	var stars := RATING.new()
-	stars.count = 5
-	stars.item_size = 14.0
-	stars.value = _song_stars(song)
-	stars.position = Vector2(ROW_W - 140.0, 11.0)
-	row.add_child(stars)
 	_rows_root.add_child(row)
+	row.setup(song, _song_stars(song))
+	row.pressed.connect(_on_row_pressed.bind(index))
 
 
 # ── Selección y desplazamiento ───────────────────────────────────────────────
@@ -445,14 +218,11 @@ func _update_info_panel() -> void:
 		dots.reveal(SONG_LIB.difficulty(song, str(RB.INSTRUMENT_IDS[i])), 0.07)
 
 
-func _on_row_input(event: InputEvent, index: int) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			if index == _selected and mb.double_click:
-				_play()
-			else:
-				_select(index)
+func _on_row_pressed(double_click: bool, index: int) -> void:
+	if index == _selected and double_click:
+		_play()
+	else:
+		_select(index)
 
 
 func _on_holder_input(event: InputEvent) -> void:
@@ -566,19 +336,7 @@ func _back() -> void:
 
 
 func _show_empty() -> void:
-	var box := Panel.new()
-	box.add_theme_stylebox_override("panel", RB.box(Color(0.03, 0.04, 0.08, 0.9), 8, RB.GOLD, 2))
-	box.size = Vector2(700.0, 200.0)
-	box.position = (get_viewport_rect().size - box.size) * 0.5
-	add_child(box)
-	var msg := RB.label(RB.t("No se encontraron canciones.", "No songs were found."), 32, Color.WHITE)
-	msg.position = Vector2(30.0, 28.0)
-	box.add_child(msg)
-	var help := RB.label(RB.t(
-		"Crea una carpeta en songs/ con nombre.wav y nombre.json\ny vuelve a abrir esta pantalla.",
-		"Create a folder in songs/ with name.wav and name.json\nand open this screen again."), 20, RB.GRAY_TXT, false)
-	help.position = Vector2(30.0, 90.0)
-	box.add_child(help)
+	_empty_box.visible = true
 	_sub_label.text = ""
 
 

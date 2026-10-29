@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://i4mskhimmw8h"]
+
+[ext_resource type="Script" uid="uid://dclvmj73ywh82" path="res://scripts/widgets/rb_menu_list.gd" id="1_ml"]
+
+[sub_resource type="StyleBoxFlat" id="sb_slab"]
+bg_color = Color(0.88, 0.82, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.35, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="RBMenuList" type="Control" unique_id=309162566]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 760.0
+offset_bottom = 420.0
+mouse_filter = 2
+script = ExtResource("1_ml")
+
+[node name="Slab" type="Panel" parent="." unique_id=1668405916]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 44.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_slab")

@@ -1,12 +1,214 @@
 [gd_scene format=3 uid="uid://cyhvg74b73uwq"]
 
-[ext_resource type="Script" path="res://scripts/screens/seleccion_instrumento.gd" id="1_2idqg"]
+[ext_resource type="Script" uid="uid://caedvknj7fyv0" path="res://scripts/screens/seleccion_instrumento.gd" id="1_si"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_backdrop.tscn" id="2_bd"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/cover_art.tscn" id="3_cover"]
+[ext_resource type="PackedScene" uid="uid://bd4lr1x7b17qh" path="res://scenes/widgets/player_tab.tscn" id="4_tab"]
+[ext_resource type="PackedScene" uid="uid://i4mskhimmw8h" path="res://scenes/widgets/rb_menu_list.tscn" id="5_list"]
+[ext_resource type="Script" uid="uid://dxm8eoml1e6mw" path="res://scripts/widgets/instrument_icon.gd" id="6_icon"]
+[ext_resource type="Script" uid="uid://bki2telx8q807" path="res://scripts/widgets/rating_row.gd" id="7_rating"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="8_bold"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_regular.tres" id="9_regular"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_italic.tres" id="10_italic"]
 
-[node name="SeleccionInstrumento" type="Control"]
+[sub_resource type="StyleBoxFlat" id="sb_body"]
+bg_color = Color(0.13, 0.14, 0.17, 0.97)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_color = Color(0.82, 0.1, 0.1, 1)
+
+[node name="SeleccionInstrumento" type="Control" unique_id=674675501]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_2idqg")
+script = ExtResource("1_si")
+
+[node name="Backdrop" parent="." unique_id=1229724561 instance=ExtResource("2_bd")]
+layout_mode = 1
+tint = Color(0.3, 0.22, 0.62, 1)
+photo_brightness = 0.45
+
+[node name="Cover" parent="." unique_id=595885906 instance=ExtResource("3_cover")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 46.0
+offset_top = 40.0
+offset_right = 170.0
+offset_bottom = 164.0
+
+[node name="Title" type="Label" parent="." unique_id=1359432785]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 196.0
+offset_top = 32.0
+offset_right = 1120.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(0.9, 0.91, 0.94, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 54
+text = "TÍTULO DE LA CANCIÓN"
+
+[node name="ArtistLabel" type="Label" parent="." unique_id=1214936731]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 100.0
+offset_right = 1120.0
+offset_bottom = 142.0
+theme_override_colors/font_color = Color(0.78, 0.8, 0.88, 1)
+theme_override_fonts/font = ExtResource("10_italic")
+theme_override_font_sizes/font_size = 30
+text = "ARTISTA"
+
+[node name="Msg" type="Label" parent="." unique_id=1292971821]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 160.0
+offset_right = 960.0
+offset_bottom = 220.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("9_regular")
+theme_override_font_sizes/font_size = 24
+text = "Elige el instrumento con el que quieres tocar esta canción."
+autowrap_mode = 3
+metadata/en = "Choose the instrument you want to play this song with."
+
+[node name="Panel" type="Control" parent="." unique_id=1888505051]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 356.0
+offset_top = 330.0
+offset_right = 796.0
+offset_bottom = 648.0
+mouse_filter = 2
+
+[node name="Body" type="Panel" parent="Panel" unique_id=1114425322]
+layout_mode = 0
+offset_top = 74.0
+offset_right = 440.0
+offset_bottom = 318.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_body")
+
+[node name="PlayerTab" parent="Panel" unique_id=1907285739 instance=ExtResource("4_tab")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 440.0
+tab_width = 440.0
+
+[node name="List" parent="Panel" unique_id=725884678 instance=ExtResource("5_list")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 90.0
+offset_right = 430.0
+offset_bottom = 306.0
+font_size = 28
+row_height = 54.0
+slab_width = 420.0
+slab_pad = 0.0
+text_padding_left = 62.0
+
+[node name="Icon0" type="Control" parent="Panel" unique_id=1052746907]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 97.0
+offset_right = 64.0
+offset_bottom = 137.0
+mouse_filter = 2
+script = ExtResource("6_icon")
+
+[node name="Dots0" type="Control" parent="Panel" unique_id=1845981256]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(97.75, 19.5)
+anchors_preset = 0
+offset_left = 310.0
+offset_top = 107.0
+offset_right = 390.0
+offset_bottom = 127.0
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 15.0
+dots = true
+
+[node name="Icon1" type="Control" parent="Panel" unique_id=1377392818]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 151.0
+offset_right = 64.0
+offset_bottom = 191.0
+mouse_filter = 2
+script = ExtResource("6_icon")
+instrument = "bajo"
+
+[node name="Dots1" type="Control" parent="Panel" unique_id=154706692]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(97.75, 19.5)
+anchors_preset = 0
+offset_left = 310.0
+offset_top = 161.0
+offset_right = 390.0
+offset_bottom = 181.0
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 15.0
+dots = true
+
+[node name="Icon2" type="Control" parent="Panel" unique_id=423372571]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 205.0
+offset_right = 64.0
+offset_bottom = 245.0
+mouse_filter = 2
+script = ExtResource("6_icon")
+instrument = "batería"
+
+[node name="Dots2" type="Control" parent="Panel" unique_id=878649726]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(97.75, 19.5)
+anchors_preset = 0
+offset_left = 310.0
+offset_top = 215.0
+offset_right = 390.0
+offset_bottom = 235.0
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 15.0
+dots = true
+
+[node name="Icon3" type="Control" parent="Panel" unique_id=1338501786]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 259.0
+offset_right = 64.0
+offset_bottom = 299.0
+mouse_filter = 2
+script = ExtResource("6_icon")
+instrument = "microfono"
+
+[node name="Dots3" type="Control" parent="Panel" unique_id=281612219]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(97.75, 19.5)
+anchors_preset = 0
+offset_left = 310.0
+offset_top = 269.0
+offset_right = 390.0
+offset_bottom = 289.0
+mouse_filter = 2
+script = ExtResource("7_rating")
+item_size = 15.0
+dots = true

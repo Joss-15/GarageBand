@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/stage_fx.gd" id="1_fx"]
+
+[sub_resource type="CanvasItemMaterial" id="mat_add"]
+blend_mode = 1
+
+[node name="StageFx" type="Node2D"]
+script = ExtResource("1_fx")
+
+[node name="Beam0" type="Polygon2D" parent="."]
+material = SubResource("mat_add")
+position = Vector2(144, -40)
+polygon = PackedVector2Array(-8, 0, 8, 0, 150, 808, -150, 808)
+vertex_colors = PackedColorArray(0.45, 0.6, 1, 0.136, 0.45, 0.6, 1, 0.136, 0.45, 0.6, 1, 0, 0.45, 0.6, 1, 0)
+
+[node name="Beam1" type="Polygon2D" parent="."]
+material = SubResource("mat_add")
+position = Vector2(432, -40)
+polygon = PackedVector2Array(-8, 0, 8, 0, 150, 808, -150, 808)
+vertex_colors = PackedColorArray(0.7, 0.45, 1, 0.136, 0.7, 0.45, 1, 0.136, 0.7, 0.45, 1, 0, 0.7, 0.45, 1, 0)
+
+[node name="Beam2" type="Polygon2D" parent="."]
+material = SubResource("mat_add")
+position = Vector2(720, -40)
+polygon = PackedVector2Array(-8, 0, 8, 0, 150, 808, -150, 808)
+vertex_colors = PackedColorArray(0.3, 0.8, 1, 0.136, 0.3, 0.8, 1, 0.136, 0.3, 0.8, 1, 0, 0.3, 0.8, 1, 0)
+
+[node name="Beam3" type="Polygon2D" parent="."]
+material = SubResource("mat_add")
+position = Vector2(1008, -40)
+polygon = PackedVector2Array(-8, 0, 8, 0, 150, 808, -150, 808)
+vertex_colors = PackedColorArray(1, 0.5, 0.8, 0.136, 1, 0.5, 0.8, 0.136, 1, 0.5, 0.8, 0, 1, 0.5, 0.8, 0)
+
+[node name="Beam4" type="Polygon2D" parent="."]
+visible = false
+material = SubResource("mat_add")
+position = Vector2(1008, -40)
+polygon = PackedVector2Array(-8, 0, 8, 0, 150, 808, -150, 808)
+vertex_colors = PackedColorArray(0.45, 0.6, 1, 0.136, 0.45, 0.6, 1, 0.136, 0.45, 0.6, 1, 0, 0.45, 0.6, 1, 0)

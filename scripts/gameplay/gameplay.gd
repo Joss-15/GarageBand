@@ -5,15 +5,11 @@
 extends Node2D
 
 const RB = preload("res://scripts/core/rb_theme.gd")
-const HUD_SCRIPT = preload("res://scripts/gameplay/gameplay_hud.gd")
-const PAUSE_SCRIPT = preload("res://scripts/gameplay/pause_menu.gd")
-const STAGE_FX = preload("res://scripts/gameplay/stage_fx.gd")
 const SONG_LIB = preload("res://scripts/core/song_library.gd")
 
 const LANE_COUNT := 5
 const NOTE_FALL_TIME := 2.0
 const NOTE_SCENE := preload("res://scenes/gameplay/note.tscn")
-const RECEPTOR_SCENE := preload("res://scenes/gameplay/lane_receptor.tscn")
 const ENEMY_SCENE := preload("res://scenes/characters/enemy.tscn")
 const LANE_ACTIONS := ["lane_0", "lane_1", "lane_2", "lane_3", "lane_4"]
 
@@ -28,7 +24,11 @@ const FAR_Z := 2.5
 @onready var highway: Node2D = $HighwayRoot
 @onready var fighter: Node2D = $Nat
 @onready var actors: Node2D = $Actors
-@onready var back_fx: Node2D = $BackFX
+# Nodos de la escena gameplay.tscn: HUD, pausa, luces de escenario y los 5 receptores
+@onready var _hud: Control = %Hud
+@onready var _pause: CanvasLayer = %PauseMenu
+@onready var _stage_fx: Node2D = %StageFx
+@onready var _receptors: Array = [%Receptor0, %Receptor1, %Receptor2, %Receptor3, %Receptor4]
 
 var pending_notes: Array = []
 var active_notes: Array = []
@@ -48,10 +48,6 @@ var _paused: bool = false
 var _last_time: float = 0.0
 var _beat_period: float = 0.5
 var _duration: float = 1.0
-var _receptors: Array = []
-var _hud: Control = null
-var _pause: CanvasLayer = null
-var _stage_fx: Node2D = null
 
 
 ## Si se abre esta escena directamente (F6) sin haber elegido canción, usa la primera de la biblioteca.
@@ -81,9 +77,6 @@ func _ready() -> void:
 	for i in LANE_COUNT:
 		active_notes[i] = []
 
-	_build_back_fx(vp)
-	_build_receptors()
-
 	var beatmap: Dictionary = GameState.current_beatmap
 	if beatmap.is_empty():
 		push_error("gameplay.gd: No hay beatmap en GameState.")
@@ -100,8 +93,8 @@ func _ready() -> void:
 	var bpm: float = float(beatmap.get("bpm_estimado", 120.0))
 	_beat_period = 60.0 / maxf(bpm, 40.0)
 
-	_build_hud()
-	_build_pause()
+	_setup_hud()
+	_connect_pause()
 
 	audio_player.stream = GameState.selected_stream
 	audio_player.play()
@@ -110,51 +103,14 @@ func _ready() -> void:
 
 # ── Construcción ─────────────────────────────────────────────────────────────
 
-func _build_back_fx(vp: Vector2) -> void:
-	var floor_tex := TextureRect.new()
-	floor_tex.texture = RB.v_gradient(Color(0.03, 0.05, 0.14), Color(0.0, 0.0, 0.02))
-	floor_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	floor_tex.stretch_mode = TextureRect.STRETCH_SCALE
-	floor_tex.position = Vector2(0.0, 228.0)
-	floor_tex.size = Vector2(vp.x, vp.y - 228.0)
-	back_fx.add_child(floor_tex)
-	var fx := STAGE_FX.new()
-	fx.origin_y = 226.0
-	fx.length = vp.y - 200.0
-	fx.beam_spread = 260.0
-	fx.beam_count = 5
-	fx.base_alpha = 0.09
-	back_fx.add_child(fx)
-	_stage_fx = fx
-
-
-func _build_receptors() -> void:
-	_receptors.clear()
-	for i in LANE_COUNT:
-		var r: Node2D = RECEPTOR_SCENE.instantiate()
-		var col: Color = RB.LANE_COLORS[i]
-		r.lane_color = col
-		r.lane_index = i
-		r.position = Vector2(highway.lane_center_x(i), highway.hit_y)
-		highway.add_child(r)
-		_receptors.append(r)
-
-
-func _build_hud() -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = 5
-	add_child(layer)
-	_hud = HUD_SCRIPT.new()
-	layer.add_child(_hud)
+func _setup_hud() -> void:
 	var title: String = GameState.selected_song_title
 	if title == "":
 		title = GameState.selected_song_name
 	_hud.setup(title, GameState.selected_song_artist, GameState.selected_instrument, _duration)
 
 
-func _build_pause() -> void:
-	_pause = PAUSE_SCRIPT.new()
-	add_child(_pause)
+func _connect_pause() -> void:
 	_pause.resume_finished.connect(_on_resume_finished)
 	_pause.restart_requested.connect(_on_restart)
 	_pause.quit_requested.connect(_on_quit)

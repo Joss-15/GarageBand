@@ -1,9 +1,9 @@
+@tool
 ## rating_row.gd
 ## Fila de estrellas (dots = false) o de puntos de dificultad (dots = true).
 ## reveal(n) los rellena uno por uno con un pequeño rebote.
+## Es @tool: se ve también en el editor.
 extends Control
-
-const RB = preload("res://scripts/core/rb_theme.gd")
 
 @export var count: int = 5:
 	set(v):
@@ -23,13 +23,17 @@ const RB = preload("res://scripts/core/rb_theme.gd")
 		_update_min_size()
 		queue_redraw()
 
-@export var dots: bool = false
+@export var dots: bool = false:
+	set(v):
+		dots = v
+		queue_redraw()
 
 var _shown: float = 0.0
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shown = float(value)
 	_update_min_size()
 
 
@@ -66,8 +70,17 @@ func _draw() -> void:
 			_draw_star(center, r, k > 0.0)
 
 
+func _star_points(center: Vector2, r_out: float, r_in_ratio: float = 0.46) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in 10:
+		var a: float = -PI * 0.5 + float(i) * PI / 5.0
+		var rad: float = r_out if i % 2 == 0 else r_out * r_in_ratio
+		pts.append(center + Vector2(cos(a), sin(a)) * rad)
+	return pts
+
+
 func _draw_star(center: Vector2, r: float, filled: bool) -> void:
-	var pts: PackedVector2Array = RB.star_points(center, r)
+	var pts: PackedVector2Array = _star_points(center, r)
 	var fill: Color = Color(0.96, 0.78, 0.14) if filled else Color(0.13, 0.14, 0.18)
 	var edge: Color = Color(0.45, 0.30, 0.02) if filled else Color(0.38, 0.40, 0.46)
 	draw_colored_polygon(pts, fill)

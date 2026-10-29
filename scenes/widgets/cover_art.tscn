@@ -1,0 +1,93 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/widgets/cover_art.gd" id="1_cv"]
+[ext_resource type="FontFile" path="res://assets/fonts/RhythmicHits.ttf" id="2_brand"]
+
+[sub_resource type="StyleBoxFlat" id="sb_frame"]
+bg_color = Color(0.05, 0.06, 0.09, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.82, 0.84, 0.9, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="Gradient" id="g_bg"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.31, 0.23, 0.62, 1, 0.13, 0.09, 0.22, 1)
+
+[sub_resource type="GradientTexture2D" id="t_bg"]
+gradient = SubResource("g_bg")
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+width = 4
+height = 256
+
+[node name="CoverArt" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 236.0
+offset_bottom = 236.0
+mouse_filter = 2
+script = ExtResource("1_cv")
+
+[node name="Frame" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_frame")
+
+[node name="Bg" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("t_bg")
+expand_mode = 1
+
+[node name="Letter" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.85)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.6)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("2_brand")
+theme_override_font_sizes/font_size = 108
+text = "G"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cover" type="TextureRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6

@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/widgets/song_row.gd" id="1_row"]
+[ext_resource type="Script" path="res://scripts/widgets/rating_row.gd" id="2_rating"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="3_bold"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_italic.tres" id="4_italic"]
+
+[node name="SongRow" type="Control"]
+custom_minimum_size = Vector2(790, 42)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 790.0
+offset_bottom = 42.0
+script = ExtResource("1_row")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 4.0
+offset_right = 330.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 25
+text = "Título de la canción"
+
+[node name="Artist" type="Label" parent="."]
+layout_mode = 0
+offset_left = 380.0
+offset_top = 8.0
+offset_right = 540.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 1)
+theme_override_fonts/font = ExtResource("4_italic")
+theme_override_font_sizes/font_size = 20
+text = "Artista"
+
+[node name="Stars" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 650.0
+offset_top = 11.0
+offset_right = 725.0
+offset_bottom = 29.0
+mouse_filter = 2
+script = ExtResource("2_rating")
+item_size = 14.0

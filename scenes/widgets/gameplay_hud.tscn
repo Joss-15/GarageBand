@@ -1,0 +1,278 @@
+[gd_scene format=3 uid="uid://cvlxr64u3akrd"]
+
+[ext_resource type="Script" uid="uid://65b84alehcuq" path="res://scripts/gameplay/gameplay_hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://dxm8eoml1e6mw" path="res://scripts/widgets/instrument_icon.gd" id="2_icon"]
+[ext_resource type="Script" uid="uid://dkvr2qtnvrump" path="res://scripts/widgets/combo_dial.gd" id="3_dial"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="4_bold"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_italic.tres" id="5_italic"]
+
+[sub_resource type="StyleBoxFlat" id="sb_track"]
+bg_color = Color(0.05, 0.06, 0.09, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.57, 0.63, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="Gradient" id="g_perf"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.2, 0.9, 0.3, 1, 0.95, 0.85, 0.12, 1, 0.9, 0.15, 0.15, 1)
+
+[sub_resource type="GradientTexture2D" id="t_perf"]
+gradient = SubResource("g_perf")
+width = 4
+height = 264
+fill_to = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_score"]
+bg_color = Color(0.1, 0.11, 0.16, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.8, 0.86, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_prog_track"]
+bg_color = Color(0.06, 0.07, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.57, 0.63, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="sb_prog_fill"]
+bg_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="GameplayHud" type="Control" unique_id=1960112817]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="PerfTrack" type="Panel" parent="." unique_id=15719832]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 262.0
+offset_right = 52.0
+offset_bottom = 526.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_track")
+
+[node name="PerfClip" type="Control" parent="." unique_id=211174400]
+unique_name_in_owner = true
+clip_contents = true
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 394.0
+offset_right = 52.0
+offset_bottom = 526.0
+mouse_filter = 2
+
+[node name="PerfGrad" type="TextureRect" parent="PerfClip" unique_id=1762337643]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = -132.0
+offset_right = 12.0
+offset_bottom = 132.0
+mouse_filter = 2
+texture = SubResource("t_perf")
+expand_mode = 1
+
+[node name="PerfIcon" type="Control" parent="." unique_id=1980541752]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+anchors_preset = 0
+offset_left = 23.0
+offset_top = 371.0
+offset_right = 69.0
+offset_bottom = 417.0
+mouse_filter = 2
+script = ExtResource("2_icon")
+
+[node name="SongInfo" type="VBoxContainer" parent="." unique_id=1983886658]
+layout_mode = 0
+offset_left = 101.0
+offset_top = 12.0
+offset_right = 341.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="SongTitle" type="Label" parent="SongInfo" unique_id=340420727]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 26
+text = "Título de la canción"
+autowrap_mode = 3
+max_lines_visible = 2
+
+[node name="ArtistLabel" type="Label" parent="SongInfo" unique_id=207753866]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.82, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("5_italic")
+theme_override_font_sizes/font_size = 19
+text = "Artista"
+
+[node name="InstrumentLabel" type="Label" parent="SongInfo" unique_id=531787998]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.82, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 16
+text = "GUITARRA"
+
+[node name="ComboDial" type="Control" parent="." unique_id=1606000440]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 76)
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 420.0
+offset_right = 376.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("3_dial")
+font = ExtResource("4_bold")
+
+[node name="ComboCaption" type="Label" parent="." unique_id=741940146]
+layout_mode = 0
+offset_left = 300.0
+offset_top = 498.0
+offset_right = 376.0
+offset_bottom = 516.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 13
+text = "COMBO"
+horizontal_alignment = 1
+
+[node name="ScoreBox" type="Panel" parent="." unique_id=1129768709]
+layout_mode = 0
+offset_left = 843.0
+offset_top = 16.0
+offset_right = 1131.0
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_score")
+
+[node name="ScoreCaption" type="Label" parent="." unique_id=700144990]
+layout_mode = 0
+offset_left = 857.0
+offset_top = 22.0
+offset_right = 937.0
+offset_bottom = 41.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 13
+text = "PUNTOS"
+metadata/en = "SCORE"
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=247337244]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 851.0
+offset_top = 26.0
+offset_right = 1117.0
+offset_bottom = 77.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 38
+text = "0"
+horizontal_alignment = 2
+
+[node name="AccLabel" type="Label" parent="." unique_id=2126146569]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 847.0
+offset_top = 80.0
+offset_right = 1131.0
+offset_bottom = 104.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 16
+text = "PRECISIÓN 100.0%"
+
+[node name="ProgTrack" type="Panel" parent="." unique_id=843486450]
+layout_mode = 0
+offset_left = 843.0
+offset_top = 110.0
+offset_right = 1131.0
+offset_bottom = 122.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_prog_track")
+
+[node name="ProgFill" type="Panel" parent="." unique_id=545897071]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 845.0
+offset_top = 112.0
+offset_right = 845.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_prog_fill")
+
+[node name="TimeStart" type="Label" parent="." unique_id=1971759377]
+layout_mode = 0
+offset_left = 843.0
+offset_top = 126.0
+offset_right = 903.0
+offset_bottom = 148.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 15
+text = "00:00"
+
+[node name="DurationLabel" type="Label" parent="." unique_id=1659595940]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1031.0
+offset_top = 126.0
+offset_right = 1131.0
+offset_bottom = 147.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 15
+text = "03:00"
+horizontal_alignment = 2
+
+[node name="PauseHint" type="Label" parent="." unique_id=1610402179]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 618.0
+offset_right = 220.0
+offset_bottom = 638.0
+theme_override_colors/font_color = Color(0.5, 0.52, 0.58, 0.9)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 14
+text = "ESC  PAUSA"
+metadata/en = "ESC  PAUSE"

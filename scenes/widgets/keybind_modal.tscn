@@ -1,0 +1,102 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/widgets/keybind_modal.gd" id="1_km"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_menu_list.tscn" id="2_list"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="3_bold"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_italic.tres" id="4_italic"]
+
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+bg_color = Color(0.05, 0.06, 0.11, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 18
+
+[node name="KeybindModal" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_km")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0.03, 0.72)
+
+[node name="Panel" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -235.0
+offset_right = 310.0
+offset_bottom = 235.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="Title" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 18.0
+offset_right = 400.0
+offset_bottom = 66.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 38
+text = "TECLAS"
+metadata/en = "KEY BINDINGS"
+
+[node name="Bar" type="ColorRect" parent="Panel"]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 72.0
+offset_right = 586.0
+offset_bottom = 75.0
+mouse_filter = 2
+color = Color(0.78, 0.08, 0.08, 1)
+
+[node name="List" parent="Panel" instance=ExtResource("2_list")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 34.0
+offset_top = 88.0
+offset_right = 586.0
+offset_bottom = 408.0
+font_size = 30
+row_height = 44.0
+slab_width = 552.0
+slab_pad = 0.0
+
+[node name="Hint" type="Label" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 34.0
+offset_top = 428.0
+offset_right = 586.0
+offset_bottom = 452.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("4_italic")
+theme_override_font_sizes/font_size = 16
+text = "Elige un carril y presiona la tecla nueva."

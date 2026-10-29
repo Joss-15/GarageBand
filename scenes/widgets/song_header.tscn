@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/widgets/song_header.gd" id="1_hd"]
+[ext_resource type="Script" path="res://scripts/widgets/rating_row.gd" id="2_rating"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="3_bold"]
+
+[node name="SongHeader" type="Control"]
+custom_minimum_size = Vector2(790, 46)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 790.0
+offset_bottom = 46.0
+mouse_filter = 2
+script = ExtResource("1_hd")
+
+[node name="Bg" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 790.0
+offset_bottom = 46.0
+mouse_filter = 2
+color = Color(0.17, 0.38, 0.48, 0.92)
+
+[node name="Edge" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 5.0
+offset_bottom = 46.0
+mouse_filter = 2
+color = Color(0.45, 0.75, 0.9, 0.9)
+
+[node name="Letter" type="Label" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 2.0
+offset_right = 84.0
+offset_bottom = 44.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 32
+text = "A"
+
+[node name="Count" type="Label" parent="."]
+layout_mode = 0
+offset_left = 470.0
+offset_top = 8.0
+offset_right = 630.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.8, 0.84, 0.9, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 22
+text = "1 CANCIÓN"
+
+[node name="Earned" type="Label" parent="."]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 8.0
+offset_right = 730.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 22
+text = "0/5"
+horizontal_alignment = 2
+
+[node name="Star" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 738.0
+offset_top = 8.0
+offset_right = 772.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("2_rating")
+count = 1
+value = 1
+item_size = 24.0
