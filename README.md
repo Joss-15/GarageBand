@@ -1,15 +1,15 @@
-# Garage Band 🎸⚡
+# Garage Band
 
-Juego de ritmo de **5 carriles** hecho en **Godot 4.6**, con una interfaz inspirada en Rock Band: carril en perspectiva con "banda eléctrica", notas con relieve, selección de canción por orden alfabético, elección de instrumento, pausa, resultados con estrellas y tabla de posiciones local. Mientras tocas, **Nat** pelea contra los enemigos que representan tus notas.
+Juego de ritmo de *carriles** hecho en **Godot 4.6**, con una interfaz inspirada en Rock Band: carril en perspectiva con "banda eléctrica", notas con relieve, selección de canción por orden alfabético, elección de instrumento, pausa, resultados con estrellas y tabla de posiciones local. Mientras tocas, **Nat** pelea contra los enemigos que representan tus notas.
 
-## 🎮 Cómo jugar
+## Cómo jugar
 
 * **Teclas por defecto:** `D` `F` `J` `K` `L` (se pueden cambiar en *Opciones → Teclas*).
 * Presiona la tecla del carril cuando la nota llegue a la barra cromada.
 * Tu precisión define el juicio: **PERFECTO**, **BIEN**, **REGULAR** o **FALLO**. Presionar una tecla al aire también cuenta como fallo y rompe el combo.
 * `Esc` pausa la partida (continuar con cuenta 3-2-1, reiniciar o salir al menú).
 
-## ✨ Características
+## Características
 
 * **Menú principal** con submenú de opciones en cascada: volumen, reasignación de teclas (con modal Aceptar/Cancelar), idioma (Español / English) y modo daltonismo. Los ajustes se guardan entre sesiones.
 * **Biblioteca musical** ordenada por letra, con portada, mejor puntaje, dificultad por instrumento y preescucha de la canción resaltada.
@@ -17,7 +17,7 @@ Juego de ritmo de **5 carriles** hecho en **Godot 4.6**, con una interfaz inspir
 * **Gameplay:** carril en perspectiva (shader), barra de rendimiento, puntos, progreso de la canción, combo y juicios.
 * **Resultados:** puntos totales, precisión, rango, estrellas y tabla de posiciones guardada en SQLite local (`godot-sqlite`).
 
-## 🎵 Agregar canciones
+## Agregar canciones
 
 Cada canción vive en su propia carpeta dentro de `songs/`:
 
@@ -36,7 +36,7 @@ songs/
 
 Si el mapa de un instrumento no existe, se usa el mapa base. El título y el artista se deducen del nombre (`artista-Titulo`) si no hay `info.json`.
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 ├── project.godot
@@ -69,7 +69,7 @@ Si el mapa de un instrumento no existe, se usa el mapa base. El título y el art
 
 `tools/` guarda `generate_beatmaps.py` y los stems usados para crear los mapas por instrumento. Godot no los importa (`.gdignore`).
 
-## 🛠️ Detalles técnicos
+## Detalles técnicos
 
 * Resolución base **1152×648** escalada a **1920×1080** (`canvas_items`, proporción 16:9).
 * Renderizado *Compatibility*.
@@ -77,11 +77,9 @@ Si el mapa de un instrumento no existe, se usa el mapa base. El título y el art
 
 ---
 
-## 🎓 Datos Escolares
+## Datos Escolares
 
-**PROYECTO FINAL HECHO PARA LA MATERIA DE:** **PROGRAMACIÓN 3D - CUCEI 2026** **Con el Profesor:** JOSE LUIS DAVID BONILLA CARRANZA  
-
-### 👥 Integrantes del Equipo
+### Integrantes del Equipo
 * **Sánchez Naranjo José Alejandro** - 219881881
 * **Almaraz Correa Diego Damián** - 222967185
 * **Zamora Delgadillo Miguel Angel** - 219630986
