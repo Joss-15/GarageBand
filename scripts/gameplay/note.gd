@@ -1,10 +1,11 @@
 ## note.gd
-## Una nota (gema) que viaja por el carril en perspectiva. Su posición y tamaño se
-## calculan a partir del tiempo de la canción; el acierto/fallo usa las mismas
-## ventanas de tiempo de siempre.
+## Una nota (pastilla con relieve) que viaja por el carril en perspectiva. Su posición
+## se calcula a partir del tiempo de la canción y se dibuja apoyada sobre el plano del
+## carril (chip_draw.gd), con el mismo ángulo que el carril; el acierto/fallo usa las
+## mismas ventanas de tiempo de siempre.
 extends Node2D
 
-const RB = preload("res://scripts/core/rb_theme.gd")
+const ChipDraw = preload("res://scripts/core/chip_draw.gd")
 
 signal note_hit(lane: int, accuracy: float)
 signal note_missed(lane: int)
@@ -14,8 +15,10 @@ const HIT_WINDOW_PERFECT := 0.060
 const HIT_WINDOW_GOOD := 0.100
 const HIT_WINDOW_BAD := 0.20
 
-const GEM_W := 78.0
-const GEM_H := 28.0
+# Tamaño de la pastilla a la altura de la línea de golpe (px): medio ancho, media profundidad, relieve
+const GEM_HW := 33.0
+const GEM_HD := 19.0
+const GEM_ELEV := 8.0
 
 var lane: int = 0
 var beat_time: float = 0.0
@@ -24,11 +27,9 @@ var highway: Node2D = null
 var fall_time: float = 2.0
 
 var _judged: bool = false
-var _shadow_pts := PackedVector2Array()
-var _outer_pts := PackedVector2Array()
-var _body_pts := PackedVector2Array()
-var _body_cols := PackedColorArray()
-var _gloss_pts := PackedVector2Array()
+var _k: float = 547.0         # hit_y - horizon_y
+var _lateral: float = 0.0     # distancia de su carril al centro del highway
+var _zc: float = 1.0          # distancia relativa actual (1 = línea de golpe)
 
 
 func setup(p_lane: int, p_time: float, p_color: Color, p_highway: Node2D, p_fall_time: float) -> void:
@@ -37,31 +38,16 @@ func setup(p_lane: int, p_time: float, p_color: Color, p_highway: Node2D, p_fall
 	color = p_color
 	highway = p_highway
 	fall_time = p_fall_time
-	_build_gem()
+	_k = highway.hit_y - highway.horizon_y
+	_lateral = highway.lane_offset(lane)
 	visible = false
 	queue_redraw()
 
 
-func _build_gem() -> void:
-	var hw: float = GEM_W * 0.5
-	var hh: float = GEM_H * 0.5
-	_outer_pts = RB.rounded_rect(Rect2(-hw, -hh, GEM_W, GEM_H), 10.0)
-	_shadow_pts = RB.rounded_rect(Rect2(-hw + 2.0, -hh + 4.0, GEM_W, GEM_H), 10.0)
-	_body_pts = RB.rounded_rect(Rect2(-hw + 3.0, -hh + 3.0, GEM_W - 6.0, GEM_H - 6.0), 8.0)
-	_gloss_pts = RB.rounded_rect(Rect2(-hw + 8.0, -hh + 4.5, GEM_W - 16.0, GEM_H * 0.34), 5.0)
-	_body_cols = PackedColorArray()
-	for v in _body_pts:
-		var t: float = clampf((v.y + hh - 3.0) / (GEM_H - 6.0), 0.0, 1.0)
-		_body_cols.append(color.lightened(0.38 * (1.0 - t)).darkened(0.30 * t))
-
-
 func _draw() -> void:
-	if _outer_pts.is_empty():
+	if highway == null:
 		return
-	draw_colored_polygon(_shadow_pts, Color(0.0, 0.0, 0.0, 0.45))
-	draw_colored_polygon(_outer_pts, Color(0.96, 0.96, 0.99))
-	draw_polygon(_body_pts, _body_cols)
-	draw_colored_polygon(_gloss_pts, Color(1.0, 1.0, 1.0, 0.30))
+	ChipDraw.draw_chip(self, _k, _lateral, _zc, color, GEM_HW, GEM_HD, GEM_ELEV)
 
 
 ## Posiciona la nota según el tiempo actual de la canción y detecta el fallo.
@@ -74,9 +60,9 @@ func update_for_time(song_time: float) -> void:
 		return
 	var shown: float = clampf(dt, -0.3, fall_time)
 	position = highway.project_pos(lane, shown)
-	var sc: float = highway.project_scale(shown)
-	scale = Vector2(sc, sc)
+	_zc = 1.0 / highway.project_scale(shown)
 	visible = true
+	queue_redraw()
 	# aparece suavemente al entrar por el fondo
 	modulate.a = clampf((fall_time - dt) / 0.35, 0.0, 1.0)
 

@@ -51,6 +51,7 @@ func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z
 
 	_bar.center_x = center_x
 	_bar.hit_y = hit_y
+	_bar.horizon_y = horizon_y
 	_bar.lane_w = lane_w
 	_bar.lane_count = lane_count
 
@@ -59,6 +60,11 @@ func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z
 
 func lane_center_x(lane: int) -> float:
 	return center_x + (float(lane) - (float(lane_count) - 1.0) * 0.5) * lane_w
+
+
+## Distancia lateral del carril `lane` al eje del highway (píxeles a la altura de la línea de golpe).
+func lane_offset(lane: int) -> float:
+	return (float(lane) - (float(lane_count) - 1.0) * 0.5) * lane_w
 
 
 ## Posición en pantalla de una nota del carril `lane` a `dt` segundos de su golpe.

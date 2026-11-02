@@ -1,8 +1,16 @@
 @tool
 ## highway_bar.gd
-## Barra cromada de la línea de golpe con la tecla de cada carril.
+## Barra cromada de la línea de golpe con la tecla de cada carril. Es una pieza con
+## relieve apoyada sobre el carril: se dibuja en perspectiva (chip_draw.gd) con el mismo
+## ángulo que el highway, así que sus lados siguen las líneas del carril.
 ## Es @tool: se ve también en el editor. highway.gd le pasa la geometría al empezar.
 extends Node2D
+
+const ChipDraw = preload("res://scripts/core/chip_draw.gd")
+
+const BAR_HALF_DEPTH := 20.0     # media profundidad de la barra (px a la altura de la línea)
+const BAR_ELEV := 7.0
+const CAP_COLOR := Color(1.0, 0.55, 0.12)
 
 const LANE_COLORS := [
 	Color(0.14, 0.86, 0.28),
@@ -29,6 +37,10 @@ const SYMBOLS := {
 @export var hit_y: float = 566.0:
 	set(v):
 		hit_y = v
+		queue_redraw()
+@export var horizon_y: float = 19.0:
+	set(v):
+		horizon_y = v
 		queue_redraw()
 @export var lane_w: float = 88.0:
 	set(v):
@@ -100,15 +112,21 @@ func key_label(i: int) -> String:
 	return "?"
 func _draw() -> void:
 	var total_w: float = lane_w * float(lane_count)
-	var x0: float = center_x - total_w * 0.5 - 12.0
-	var x1: float = center_x + total_w * 0.5 + 12.0
+	var half_w: float = total_w * 0.5 + 12.0
 	var y: float = hit_y
-	draw_rect(Rect2(x0, y - 22.0, x1 - x0, 44.0), Color(0.07, 0.075, 0.09))
-	draw_rect(Rect2(x0, y - 22.0, x1 - x0, 4.0), Color(0.80, 0.83, 0.90))
-	draw_rect(Rect2(x0, y + 18.0, x1 - x0, 4.0), Color(0.55, 0.58, 0.66))
-	draw_rect(Rect2(x0, y - 18.0, x1 - x0, 3.0), Color(1.0, 1.0, 1.0, 0.07))
-	draw_rect(Rect2(x0 - 6.0, y - 24.0, 8.0, 48.0), Color(1.0, 0.55, 0.12))
-	draw_rect(Rect2(x1 - 2.0, y - 24.0, 8.0, 48.0), Color(1.0, 0.55, 0.12))
+	var k: float = maxf(hit_y - horizon_y, 1.0)
+
+	# Cuerpo de la barra (acero oscuro), apoyado sobre el carril en la línea de golpe
+	draw_set_transform(Vector2(center_x, y))
+	ChipDraw.draw_chip(self, k, 0.0, 1.0, Color(0.30, 0.32, 0.38), half_w, BAR_HALF_DEPTH, BAR_ELEV, 0.0, 0.14, 0.55, 0.15)
+
+	# Topes naranjas en los extremos (más altos que la barra)
+	for side in [-1.0, 1.0]:
+		var lateral: float = (half_w + 3.0) * float(side)
+		draw_set_transform(Vector2(center_x + lateral, y))
+		ChipDraw.draw_chip(self, k, lateral, 1.0, CAP_COLOR, 6.0, BAR_HALF_DEPTH + 4.0, BAR_ELEV + 6.0, 0.0, 0.2)
+	draw_set_transform(Vector2.ZERO)
+
 	var f: Font = font if font != null else ThemeDB.fallback_font
 	for i in lane_count:
 		var key_name: String = key_label(i)
