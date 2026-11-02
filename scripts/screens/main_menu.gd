@@ -1,7 +1,7 @@
 ## main_menu.gd
 ## Menú principal: JUGAR / OPCIONES / SALIR (escena main_menu.tscn).
-## "Opciones" abre un carrusel (volumen, teclas, idioma, daltonismo) con inicio y
-## fin. Las teclas se reasignan en una ventana modal con ACEPTAR/CANCELAR.
+## "Opciones" abre un carrusel (volumen, controles, idioma, daltonismo) con inicio y
+## fin. Las teclas y botones del jugador 1 se reasignan en una ventana modal con ACEPTAR/CANCELAR.
 ## La interfaz fija vive en la escena; aquí solo hay lógica y contenido dinámico.
 extends Control
 
@@ -152,7 +152,7 @@ func _options_items() -> Array:
 	var en: bool = GameState.current_language == "en"
 	return [
 		{"id": "volume", "text": RB.t("VOLUMEN", "VOLUME")},
-		{"id": "keys", "text": RB.t("TECLAS", "KEY BINDINGS")},
+		{"id": "keys", "text": RB.t("CONTROLES", "CONTROLS")},
 		{"id": "language", "text": RB.t("IDIOMA: ", "LANGUAGE: ") + ("ENGLISH" if en else "ESPAÑOL")},
 		{"id": "colorblind", "text": RB.t("DALTONISMO: ", "COLORBLIND: ") + (RB.t("SÍ", "ON") if GameState.colorblind_mode else RB.t("NO", "OFF"))},
 		{"id": "back", "text": RB.t("ATRÁS", "BACK")},

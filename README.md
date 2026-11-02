@@ -4,14 +4,15 @@ Juego de ritmo de *carriles** hecho en **Godot 4.6**, con una interfaz inspirada
 
 ## Cómo jugar
 
-* **Teclas por defecto:** `D` `F` `J` `K` `L` (se pueden cambiar en *Opciones → Teclas*).
+* **Jugador 1:** teclado `A` `S` `D` `F` `G` y control (cruceta ← →, `X`, `A`, `B`); ambos funcionan a la vez. Cada carril se reasigna en *Opciones → Controles*: se elige el carril y se presiona la tecla o el botón nuevo.
+* **Jugador 2 (modo de dos jugadores):** teclado `H` `J` `K` `L` `Ñ` (fijas; el jugador 1 no puede usarlas).
 * Presiona la tecla del carril cuando la nota llegue a la barra cromada.
 * Tu precisión define el juicio: **PERFECTO**, **BIEN**, **REGULAR** o **FALLO**. Presionar una tecla al aire también cuenta como fallo y rompe el combo.
 * `Esc` pausa la partida (continuar con cuenta 3-2-1, reiniciar o salir al menú).
 
 ## Características
 
-* **Menú principal** con submenú de opciones en cascada: volumen, reasignación de teclas (con modal Aceptar/Cancelar), idioma (Español / English) y modo daltonismo. Los ajustes se guardan entre sesiones.
+* **Menú principal** con submenú de opciones en cascada: volumen, reasignación de teclado y control del jugador 1 (con modal Aceptar/Cancelar), idioma (Español / English) y modo daltonismo. Los ajustes se guardan entre sesiones.
 * **Biblioteca musical** ordenada por letra, con portada, mejor puntaje, dificultad por instrumento y preescucha de la canción resaltada.
 * **Instrumentos:** guitarra, bajo, batería y micrófono; cada uno puede tener su propio mapa de notas.
 * **Gameplay:** carril en perspectiva (shader), barra de rendimiento, puntos, progreso de la canción, combo y juicios.
@@ -67,7 +68,9 @@ Si el mapa de un instrumento no existe, se usa el mapa base. El título y el art
 
 **Las pantallas y widgets están armados con nodos dentro de los `.tscn`** (se ven y editan en el editor de Godot); los scripts solo contienen lógica y contenido dinámico (canciones, puntajes, etc.). Los textos en la escena están en español y el inglés vive en el metadato `en` de cada nodo (`RB.localize` los intercambia según el idioma).
 
-`tools/` guarda `generate_beatmaps.py` y los stems usados para crear los mapas por instrumento. Godot no los importa (`.gdignore`).
+`tools/map_song.py` sirve para mapear una canción a mano desde la terminal: se escucha la canción y se tocan `A S D F G` (carriles 1 a 5); guarda los tiempos en el JSON del juego (`python tools/map_song.py femtanyl guitarra`; en Windows no necesita instalar nada; ver su cabecera para las opciones).
+
+`tools/` guarda también `generate_beatmaps.py` y los stems usados para crear los mapas por instrumento. Godot no los importa (`.gdignore`).
 
 ## Detalles técnicos
 

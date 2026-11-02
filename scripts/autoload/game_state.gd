@@ -3,6 +3,24 @@
 ## (volumen, idioma, daltonismo, teclas) y controla la música de menús.
 extends Node
 
+## Controles del jugador 1 (acciones lane_0 … lane_4): una tecla y un botón de control por
+## carril. Estos son los valores de fábrica; el jugador los cambia en Opciones → Controles
+## y se guardan en settings.cfg.
+const DEFAULT_KEYS := [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G]
+const DEFAULT_PADS := [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_X, JOY_BUTTON_A, JOY_BUTTON_B]
+
+## Teclas fijas del jugador 2 (acciones p2_lane_*). El jugador 1 no puede usarlas para que
+## nunca se pisen en el modo de dos jugadores.
+const P2_KEYS := [KEY_H, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON]  # SEMICOLON es la Ñ en teclado español
+
+## Teclas de símbolo: Godot las nombra con palabra ("Semicolon"), que no cabe en pantalla.
+const KEY_SYMBOLS := {
+	KEY_SEMICOLON: "Ñ",
+	KEY_COMMA: ",",
+	KEY_PERIOD: ".",
+	KEY_SLASH: "/",
+	KEY_APOSTROPHE: "'",
+}
 const SETTINGS_PATH := "user://settings.cfg"
 const MENU_MUSIC_PATH := "res://assets/audio/menumusic.wav"
 const LANE_COUNT := 5
@@ -26,9 +44,12 @@ var last_total_notes: int = 0
 var last_duration: float = 0.0
 var last_instrument: String = "guitarra"
 
+var last_total_notes_p2: int = 0
+var last_instrument_p2: String = "guitarra"
+
 var player1_name: String = "P1"
 var player2_name: String = "P2"
-var two_player_mode: bool = false
+var two_player_mode: bool = true
 var last_score_p2: int = 0
 var last_max_combo_p2: int = 0
 var last_accuracy_p2: float = 0.0
@@ -49,6 +70,7 @@ func _ready() -> void:
 	bgm_player.name = "GlobalBGM"
 	bgm_player.bus = "Master"
 	add_child(bgm_player)
+	_apply_default_bindings()
 	load_settings()
 	apply_audio()
 
@@ -62,10 +84,17 @@ func load_settings() -> void:
 	master_volume = clampf(float(cfg.get_value("audio", "volume", master_volume)), 0.001, 1.0)
 	current_language = str(cfg.get_value("ui", "language", current_language))
 	colorblind_mode = bool(cfg.get_value("ui", "colorblind", colorblind_mode))
+	var keys: Array[int] = []
+	var pads: Array[int] = []
 	for i in LANE_COUNT:
-		var code: int = int(cfg.get_value("keys", "lane_%d" % i, 0))
-		if code > 0:
-			set_lane_key(i, code)
+		keys.append(int(cfg.get_value("keys", "lane_%d" % i, 0)))
+		pads.append(int(cfg.get_value("keys", "pad_%d" % i, -1)))
+	# Si lo guardado es inválido (teclas repetidas, o del jugador 2 como en versiones
+	# anteriores) se descarta y quedan las de fábrica.
+	var keys_ok: bool = _bindings_valid(keys, true)
+	var pads_ok: bool = _bindings_valid(pads, false)
+	for i in LANE_COUNT:
+		set_lane_binding(i, keys[i] if keys_ok else get_lane_key(i), pads[i] if pads_ok else get_lane_pad(i))
 
 
 func save_settings() -> void:
@@ -75,6 +104,7 @@ func save_settings() -> void:
 	cfg.set_value("ui", "colorblind", colorblind_mode)
 	for i in LANE_COUNT:
 		cfg.set_value("keys", "lane_%d" % i, get_lane_key(i))
+		cfg.set_value("keys", "pad_%d" % i, get_lane_pad(i))
 	cfg.save(SETTINGS_PATH)
 
 
@@ -97,6 +127,7 @@ func apply_settings() -> void:
 	apply_colorblind()
 
 
+## Tecla (código físico) del jugador 1 para el carril `lane`, o 0 si no tiene.
 func get_lane_key(lane: int) -> int:
 	var events: Array[InputEvent] = InputMap.action_get_events("lane_%d" % lane)
 	for ev in events:
@@ -106,14 +137,66 @@ func get_lane_key(lane: int) -> int:
 	return 0
 
 
+## Botón del control del jugador 1 para el carril `lane`, o -1 si no tiene.
+func get_lane_pad(lane: int) -> int:
+	var events: Array[InputEvent] = InputMap.action_get_events("lane_%d" % lane)
+	for ev in events:
+		if ev is InputEventJoypadButton:
+			return int((ev as InputEventJoypadButton).button_index)
+	return -1
+
+
 func set_lane_key(lane: int, physical_keycode: int) -> void:
+	set_lane_binding(lane, physical_keycode, get_lane_pad(lane))
+
+
+## Deja en el carril `lane` del jugador 1 una tecla (0 = ninguna) y un botón (-1 = ninguno).
+func set_lane_binding(lane: int, physical_keycode: int, pad_button: int) -> void:
 	var action: String = "lane_%d" % lane
 	if not InputMap.has_action(action):
-		return
+		InputMap.add_action(action)
 	InputMap.action_erase_events(action)
-	var ev := InputEventKey.new()
-	ev.physical_keycode = physical_keycode as Key
-	InputMap.action_add_event(action, ev)
+	if physical_keycode > 0:
+		var kev := InputEventKey.new()
+		kev.physical_keycode = physical_keycode as Key
+		InputMap.action_add_event(action, kev)
+	if pad_button >= 0:
+		var jev := InputEventJoypadButton.new()
+		jev.button_index = pad_button as JoyButton
+		InputMap.action_add_event(action, jev)
+
+
+## Controles de fábrica del jugador 1 y teclas fijas del jugador 2. Así no dependen de lo
+## que haya en Proyecto → Configuración → Mapa de entradas.
+func _apply_default_bindings() -> void:
+	for i in LANE_COUNT:
+		set_lane_binding(i, int(DEFAULT_KEYS[i]), int(DEFAULT_PADS[i]))
+	for i in P2_KEYS.size():
+		var action: String = "p2_lane_%d" % i
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+		InputMap.action_erase_events(action)
+		var ev := InputEventKey.new()
+		ev.physical_keycode = int(P2_KEYS[i]) as Key
+		InputMap.action_add_event(action, ev)
+
+
+## Una lista guardada vale si trae los 5 carriles, sin repetidos y (teclas) sin usar las del jugador 2.
+func _bindings_valid(values: Array[int], are_keys: bool) -> bool:
+	var seen: Array[int] = []
+	for v in values:
+		if (are_keys and v <= 0) or (not are_keys and v < 0):
+			return false
+		if v in seen:
+			return false
+		if are_keys and is_p2_key(v):
+			return false
+		seen.append(v)
+	return true
+
+
+func is_p2_key(code: int) -> bool:
+	return code in P2_KEYS
 
 
 # ── Música de menús ──────────────────────────────────────────────────────────
@@ -156,3 +239,55 @@ func stop_bgm() -> void:
 		_bgm_tween.kill()
 	if bgm_player != null:
 		bgm_player.stop()
+
+
+# ── Nombres para mostrar ─────────────────────────────────────────────────────
+
+## Nombre corto de una tecla (código físico), como se ve en el teclado del jugador.
+func key_name(code: int) -> String:
+	if code <= 0:
+		return "?"
+	var shown: int = code
+	if DisplayServer.get_name() != "headless":
+		var mapped: int = int(DisplayServer.keyboard_get_keycode_from_physical(code as Key))
+		if mapped != 0:
+			shown = mapped
+	if KEY_SYMBOLS.has(shown):
+		return str(KEY_SYMBOLS[shown])
+	return OS.get_keycode_string(shown as Key)
+
+
+## Nombre corto de un botón de control (-1 = sin botón).
+func pad_name(button: int) -> String:
+	if button < 0:
+		return "—"
+	match button:
+		JOY_BUTTON_A:
+			return "A"
+		JOY_BUTTON_B:
+			return "B"
+		JOY_BUTTON_X:
+			return "X"
+		JOY_BUTTON_Y:
+			return "Y"
+		JOY_BUTTON_LEFT_SHOULDER:
+			return "LB"
+		JOY_BUTTON_RIGHT_SHOULDER:
+			return "RB"
+		JOY_BUTTON_DPAD_LEFT:
+			return "←"
+		JOY_BUTTON_DPAD_RIGHT:
+			return "→"
+		JOY_BUTTON_DPAD_UP:
+			return "↑"
+		JOY_BUTTON_DPAD_DOWN:
+			return "↓"
+		JOY_BUTTON_LEFT_STICK:
+			return "L3"
+		JOY_BUTTON_RIGHT_STICK:
+			return "R3"
+		JOY_BUTTON_START:
+			return "START"
+		JOY_BUTTON_BACK:
+			return "BACK"
+	return "BTN %d" % button

@@ -43,6 +43,17 @@ func open() -> void:
 	_list.keyboard_enabled = true
 
 
+## Start también reanuda (igual que lo abre en la partida).
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible or _counting or not _list.keyboard_enabled:
+		return
+	if event is InputEventJoypadButton:
+		var jb := event as InputEventJoypadButton
+		if jb.pressed and jb.button_index == JOY_BUTTON_START:
+			_start_countdown()
+			get_viewport().set_input_as_handled()
+
+
 func _on_activated(id: String) -> void:
 	if _counting:
 		return

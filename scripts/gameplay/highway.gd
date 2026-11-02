@@ -23,18 +23,19 @@ var _energy := PackedFloat32Array([0.0, 0.0, 0.0, 0.0, 0.0])
 var _pulse: float = 0.0
 
 
-func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z: float, p_fall_time: float) -> void:
+func setup(vp: Vector2, p_hit_y: float, p_top_y: float, p_lane_w: float, p_far_z: float, p_fall_time: float, p_center_x: float = -1.0) -> void:
 	hit_y = p_hit_y
 	lane_w = p_lane_w
 	far_z = p_far_z
 	fall_time = p_fall_time
-	center_x = vp.x * 0.5
+	center_x = vp.x * 0.5 if p_center_x < 0.0 else p_center_x
 	# y(p=1) = p_top_y  =>  horizonte virtual donde convergen los bordes
 	horizon_y = (p_top_y - hit_y / far_z) / (1.0 - 1.0 / far_z)
 
 	_road.position = Vector2.ZERO
 	_road.size = vp
-	_mat = _road.material as ShaderMaterial
+	_mat = (_road.material as ShaderMaterial).duplicate() as ShaderMaterial
+	_road.material = _mat
 	_mat.set_shader_parameter("view_size", vp)
 	_mat.set_shader_parameter("center_x", center_x)
 	_mat.set_shader_parameter("hit_y", hit_y)

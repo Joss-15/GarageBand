@@ -64,8 +64,8 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("3_bold")
 theme_override_font_sizes/font_size = 38
-text = "TECLAS"
-metadata/en = "KEY BINDINGS"
+text = "CONTROLES"
+metadata/en = "CONTROLS"
 
 [node name="Bar" type="ColorRect" parent="Panel"]
 layout_mode = 0
@@ -99,4 +99,4 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
 theme_override_fonts/font = ExtResource("4_italic")
 theme_override_font_sizes/font_size = 16
-text = "Elige un carril y presiona la tecla nueva."
+text = "Elige un carril y presiona la tecla o el botón nuevo."
