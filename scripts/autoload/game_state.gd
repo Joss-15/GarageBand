@@ -61,6 +61,9 @@ var selected_instrument: String = "guitarra"
 var selected_instrument_p2: String = "guitarra"
 var master_volume: float = 0.1
 
+## true si el control conectado es de Nintendo (A y B, X y Y van invertidos respecto a Xbox).
+var pad_is_nintendo: bool = false
+
 var _bgm_loop: bool = false
 var _bgm_tween: Tween = null
 
@@ -71,8 +74,13 @@ func _ready() -> void:
 	bgm_player.bus = "Master"
 	add_child(bgm_player)
 	_apply_default_bindings()
+	_detect_pad_layout()
+	_apply_menu_pad_bindings()
 	load_settings()
 	apply_audio()
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	for dev in Input.get_connected_joypads():
+		_on_joy_connection_changed(int(dev), true)
 
 
 # ── Ajustes ──────────────────────────────────────────────────────────────────
@@ -181,6 +189,68 @@ func _apply_default_bindings() -> void:
 		InputMap.action_add_event(action, ev)
 
 
+## Los menús usan ui_accept / ui_cancel. Se asegura (sin depender del Mapa de entradas del
+## proyecto) que A confirme, B regrese y la cruceta navegue.
+func _apply_menu_pad_bindings() -> void:
+	# Godot nombra los botones por posición: JOY_BUTTON_A es el de ABAJO. En un control de
+	# Nintendo el de abajo se llama B y el de la derecha A, así que se intercambian para
+	# que lo que dice la etiqueta física sea lo que pasa (A confirma, B regresa).
+	var accept_btn: int = JOY_BUTTON_B if pad_is_nintendo else JOY_BUTTON_A
+	var cancel_btn: int = JOY_BUTTON_A if pad_is_nintendo else JOY_BUTTON_B
+	for action in ["ui_accept", "ui_cancel"]:
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventJoypadButton:
+				var bi: int = int((ev as InputEventJoypadButton).button_index)
+				if bi == JOY_BUTTON_A or bi == JOY_BUTTON_B:
+					InputMap.action_erase_event(action, ev)
+	_ensure_pad_button("ui_accept", accept_btn)
+	_ensure_pad_button("ui_cancel", cancel_btn)
+	_ensure_pad_button("ui_up", JOY_BUTTON_DPAD_UP)
+	_ensure_pad_button("ui_down", JOY_BUTTON_DPAD_DOWN)
+	_ensure_pad_button("ui_left", JOY_BUTTON_DPAD_LEFT)
+	_ensure_pad_button("ui_right", JOY_BUTTON_DPAD_RIGHT)
+
+
+func _ensure_pad_button(action: String, button: int) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventJoypadButton and int((ev as InputEventJoypadButton).button_index) == button:
+			return
+	var jev := InputEventJoypadButton.new()
+	jev.button_index = button as JoyButton
+	InputMap.action_add_event(action, jev)
+
+
+## ¿Hay un control de Nintendo (Switch Pro, Joy-Con) conectado? Cambia el orden A/B.
+func _detect_pad_layout() -> void:
+	var nintendo: bool = false
+	for dev in Input.get_connected_joypads():
+		var n: String = Input.get_joy_name(int(dev)).to_lower()
+		if n.contains("nintendo") or n.contains("switch") or n.contains("joy-con"):
+			nintendo = true
+	if nintendo != pad_is_nintendo:
+		pad_is_nintendo = nintendo
+		_apply_menu_pad_bindings()
+
+
+## Diagnóstico: muestra en la consola (Salida) qué control se conectó y si Godot lo conoce.
+## Si un control "desconocido" tiene los botones en otro orden, A y B no coinciden.
+func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	_detect_pad_layout()
+	if connected:
+		print("[PAD] conectado #%d: %s (mapa SDL conocido: %s)" % [device, Input.get_joy_name(device), str(Input.is_joy_known(device))])
+	else:
+		print("[PAD] desconectado #%d" % device)
+
+
+## Diagnóstico: cada botón del control que se presiona se imprime con su número.
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed:
+		var jb := event as InputEventJoypadButton
+		print("[PAD] botón %d presionado (control #%d)" % [int(jb.button_index), jb.device])
+
+
 ## Una lista guardada vale si trae los 5 carriles, sin repetidos y (teclas) sin usar las del jugador 2.
 func _bindings_valid(values: Array[int], are_keys: bool) -> bool:
 	var seen: Array[int] = []
@@ -261,6 +331,17 @@ func key_name(code: int) -> String:
 func pad_name(button: int) -> String:
 	if button < 0:
 		return "—"
+	if pad_is_nintendo:
+		# Etiquetas físicas del control de Nintendo (posiciones invertidas respecto a Godot)
+		match button:
+			JOY_BUTTON_A:
+				return "B"
+			JOY_BUTTON_B:
+				return "A"
+			JOY_BUTTON_X:
+				return "Y"
+			JOY_BUTTON_Y:
+				return "X"
 	match button:
 		JOY_BUTTON_A:
 			return "A"

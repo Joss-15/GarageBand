@@ -4,7 +4,7 @@
 ## lista de instrumentos y su dificultad.
 ##
 ## A la derecha de la pestaña del jugador 1 hay una pestaña "+" para sumar al
-## jugador 2 (clic, o la tecla 2). Se crea una copia completa de la tarjeta, cada
+## jugador 2 (clic, o la tecla 2; el control siempre es del jugador 1). Se crea una copia completa de la tarjeta, cada
 ## jugador elige con sus propias teclas y la partida empieza cuando los dos confirman.
 ##   Un jugador : ↑ ↓ Enter Esc (como siempre)
 ##   Dos jugadores: J1 = W S E (o control: cruceta ↑ ↓ y A) · J2 = ↑ ↓ Enter · Esc vuelve a la biblioteca
@@ -165,7 +165,7 @@ func _build_plus_tab() -> void:
 	btn.mouse_exited.connect(_set_plus_alpha.bind(0.65))
 	_plus_tab.add_child(btn)
 
-	var hint: Label = RB.label(RB.t("o pulsa la tecla 2 / Y", "or press the 2 key / Y"), 16, RB.GRAY_TXT, false)
+	var hint: Label = RB.label(RB.t("o pulsa la tecla 2", "or press the 2 key"), 16, RB.GRAY_TXT, false)
 	hint.position = Vector2(8.0, body.size.y + 6.0)
 	_plus_tab.add_child(hint)
 
@@ -305,28 +305,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			if k0.pressed and not k0.echo and (k0.keycode == KEY_2 or k0.keycode == KEY_KP_2):
 				_add_player2()
 				get_viewport().set_input_as_handled()
-		elif event is InputEventJoypadButton:
-			var jb0 := event as InputEventJoypadButton
-			if jb0.pressed and jb0.button_index == JOY_BUTTON_Y:
-				_add_player2()
-				get_viewport().set_input_as_handled()
 		return
 
 	# Dos jugadores: J1 con W S E o con el control, J2 con ↑ ↓ Enter, Esc vuelve
 	if event is InputEventJoypadButton:
 		var jb := event as InputEventJoypadButton
 		if jb.pressed:
-			match jb.button_index:
-				JOY_BUTTON_DPAD_UP:
-					_move(0, -1)
-				JOY_BUTTON_DPAD_DOWN:
-					_move(0, 1)
-				JOY_BUTTON_A:
-					_confirm(0)
-				JOY_BUTTON_B:
-					_back()
-				_:
-					return
+			# Confirmar/volver por acción (ui_accept / ui_cancel) para respetar el orden A/B del control
+			if event.is_action_pressed("ui_accept"):
+				_confirm(0)
+			elif event.is_action_pressed("ui_cancel"):
+				_back()
+			elif jb.button_index == JOY_BUTTON_DPAD_UP:
+				_move(0, -1)
+			elif jb.button_index == JOY_BUTTON_DPAD_DOWN:
+				_move(0, 1)
+			else:
+				return
 		else:
 			return
 	elif event is InputEventJoypadMotion:
