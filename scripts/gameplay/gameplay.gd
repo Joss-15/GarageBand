@@ -4,6 +4,9 @@
 ## sus teclas, su mapa de notas (según su instrumento), sus puntos y su combo.
 ## En 1 jugador se usa el HUD de siempre (%Hud). En 2 jugadores ese HUD se oculta
 ## y se dibuja uno compacto sobre cada carril.
+##
+## Modo en línea: un solo carril local (el rival se ve en un panel a la derecha),
+## cuenta regresiva común y sincronización de estado vía Net.
 extends Node2D
 
 const RB = preload("res://scripts/core/rb_theme.gd")
@@ -87,6 +90,24 @@ var _prog_fill: Panel = null
 var _elapsed_lbl: Label = null
 var _last_sec: int = -1
 
+# Modo en línea (Net): cada jugador juega su pista y ve el puntaje del rival en vivo
+const LOBBY_SCENE := "res://scenes/screens/online_lobby.tscn"
+var online: bool = false
+var _online_waiting: bool = false     # esperando la hora de inicio (cuenta regresiva)
+var _online_start_msec: int = 0
+var _countdown_lbl: Label = null
+var _state_timer: float = 0.0
+var _rival_final: Dictionary = {}     # resultado final del rival, cuando llega
+var _rival_gone: bool = false
+var _rival_score: int = 0
+var _rival_score_lbl: Label = null
+var _rival_combo_lbl: Label = null
+var _rival_acc_lbl: Label = null
+var _rival_diff_lbl: Label = null
+var _rival_perf_fill: Panel = null
+var _rival_perf_w: float = 0.0
+var _wait_lbl: Label = null
+
 
 ## Si se abre esta escena directamente (F6) sin haber elegido canción, usa la primera de la biblioteca.
 func _ensure_session() -> void:
@@ -107,7 +128,9 @@ func _ensure_session() -> void:
 func _ready() -> void:
 	_ensure_session()
 	GameState.stop_bgm()
-	two_player = GameState.two_player_mode
+	# En línea hay un solo carril local (el del rival es el panel de la derecha)
+	online = GameState.online_mode and Net.active and Net.connected
+	two_player = GameState.two_player_mode and not online
 
 	var beatmap: Dictionary = GameState.current_beatmap
 	if beatmap.is_empty():
@@ -133,8 +156,11 @@ func _ready() -> void:
 	_connect_pause()
 
 	audio_player.stream = GameState.selected_stream
-	audio_player.play()
-	game_started = true
+	if online:
+		_setup_online()          # la música arranca a la hora acordada con el rival
+	else:
+		audio_player.play()
+		game_started = true
 
 
 # ── Construcción ─────────────────────────────────────────────────────────────
@@ -373,6 +399,9 @@ func _song_time() -> float:
 
 
 func _process(_delta: float) -> void:
+	if _online_waiting:
+		_tick_online_countdown()
+		return
 	if not game_started or game_ended or _paused:
 		return
 
@@ -380,6 +409,8 @@ func _process(_delta: float) -> void:
 	_update_progress(t)
 	for trk: Track in tracks:
 		_update_track(trk, t)
+	if online:
+		_send_online_state(_delta, t)
 
 	if not audio_player.playing and _all_pending_empty():
 		_end_game()
@@ -515,6 +546,8 @@ func _on_note_hit(lane: int, accuracy: float, trk: Track) -> void:
 		_hud.set_accuracy(_live_accuracy(trk))
 
 	_update_performance(trk, perf_value)
+	if online:
+		_update_online_diff()
 	trk.highway.pulse(0.6 if accuracy >= 0.95 else 0.3)
 	_stage_fx.pulse(0.55 if accuracy >= 0.95 else 0.25)
 
@@ -586,12 +619,15 @@ func _end_game() -> void:
 		GameState.last_hit_notes_p2 = 0
 		GameState.last_total_notes_p2 = 0
 
+	if online:
+		await _finish_online(t1)
+
 	await get_tree().create_timer(1.0).timeout
 	SceneFade.go("res://scenes/screens/results.tscn")
 
 
 ## La pausa es Esc o Start. No se usa ui_cancel porque incluye el botón B del control,
-## que también es un carril del jugador 1.
+## que también es un carril del jugador 1. En línea no se pausa al perder el foco.
 func _unhandled_input(event: InputEvent) -> void:
 	if not game_started or game_ended or _paused:
 		return
@@ -608,7 +644,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and game_started and not game_ended and not _paused:
+	# En línea no se pausa solo al perder el foco (el rival sigue jugando)
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and game_started and not game_ended and not _paused and not online:
 		_open_pause()
 
 
@@ -624,8 +661,159 @@ func _on_resume_finished() -> void:
 
 
 func _on_restart() -> void:
+	if online:
+		_leave_online_match()    # en línea no se reinicia a solas: se abandona la partida
+		return
 	SceneFade.go("res://scenes/gameplay/gameplay.tscn")
 
 
 func _on_quit() -> void:
+	if online:
+		_leave_online_match()
+		return
 	SceneFade.go("res://scenes/screens/song_select.tscn")
+
+func _leave_online_match() -> void:
+	get_tree().paused = false
+	Net.leave()
+	GameState.online_mode = false
+	GameState.two_player_mode = false
+	SceneFade.go("res://scenes/screens/song_select.tscn")
+
+
+# ── Modo en línea ────────────────────────────────────────────────────────────
+
+func _setup_online() -> void:
+	_ensure_hud_layer()
+	_build_rival_panel()
+	var vp: Vector2 = get_viewport_rect().size
+	_online_start_msec = GameState.online_start_at_msec
+	_online_waiting = true
+	_countdown_lbl = _text("", 120, RB.GOLD_BRIGHT, Vector2(0.0, vp.y * 0.28), vp.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_countdown_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	_countdown_lbl.add_theme_constant_override("outline_size", 10)
+	Net.rival_state.connect(_on_rival_state)
+	Net.rival_finished.connect(_on_rival_finished)
+	Net.peer_left.connect(_on_rival_left)
+
+
+## Cuenta regresiva común: los dos arrancan la música a la hora que acordaron en la sala.
+func _tick_online_countdown() -> void:
+	var left: float = float(_online_start_msec - Time.get_ticks_msec()) / 1000.0
+	if left > 0.0:
+		var txt: String = str(ceili(left))
+		if _countdown_lbl.text != txt:
+			_countdown_lbl.text = txt
+		return
+	_online_waiting = false
+	_countdown_lbl.visible = false
+	audio_player.play()
+	game_started = true
+
+
+func _send_online_state(delta: float, t: float) -> void:
+	_state_timer -= delta
+	if _state_timer > 0.0:
+		return
+	_state_timer = Net.STATE_INTERVAL
+	var trk: Track = tracks[0]
+	Net.send_state({"score": trk.score, "combo": trk.combo, "acc": _live_accuracy(trk), "perf": trk.performance, "t": t})
+
+
+## Panel del rival (derecha, bajo el HUD): nombre, puntos, precisión, combo y rendimiento.
+func _build_rival_panel() -> void:
+	var vp: Vector2 = get_viewport_rect().size
+	var w: float = 288.0
+	var x: float = vp.x - w - 14.0
+	var y: float = 176.0
+	var accent: Color = Color(0.35, 0.80, 1.0)
+
+	_box(Vector2(x, y), Vector2(w, 150.0), BOX_BG, accent, 2, 10)
+	var rival_name: String = GameState.player2_name if GameState.player2_name != "P2" else RB.t("RIVAL", "RIVAL")
+	var header: String = "%s · %s" % [rival_name, RB.instrument_name(GameState.selected_instrument_p2)]
+	_text(header.to_upper(), 16, accent, Vector2(x + 12.0, y + 6.0), w - 24.0)
+	_rival_score_lbl = _text("0", 38, Color.WHITE, Vector2(x, y + 28.0), w - 14.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_rival_acc_lbl = _text("%s 100.0%%" % RB.t("PRECISIÓN", "ACCURACY"), 14, RB.GRAY_TXT, Vector2(x + 12.0, y + 78.0), w - 24.0, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_rival_combo_lbl = _text("COMBO 0", 14, RB.GRAY_TXT, Vector2(x + 12.0, y + 98.0), w - 24.0, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_rival_diff_lbl = _text("", 16, RB.GRAY_TXT, Vector2(x + 12.0, y + 98.0), w - 24.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_box(Vector2(x + 12.0, y + 128.0), Vector2(w - 24.0, 10.0), TRACK_BG, TRACK_BORDER, 2, 5)
+	_rival_perf_w = w - 28.0
+	_rival_perf_fill = _box(Vector2(x + 14.0, y + 130.0), Vector2(_rival_perf_w * 0.5, 6.0), PERF_LOW.lerp(PERF_HIGH, 0.5), PERF_LOW, 0, 3)
+
+
+func _on_rival_state(d: Dictionary) -> void:
+	if _rival_score_lbl == null:
+		return
+	_rival_score = int(d.get("score", 0))
+	_rival_score_lbl.text = RB.fmt_int(_rival_score)
+	_rival_combo_lbl.text = "COMBO %d" % int(d.get("combo", 0))
+	_rival_acc_lbl.text = "%s %.1f%%" % [RB.t("PRECISIÓN", "ACCURACY"), float(d.get("acc", 100.0))]
+	var perf: float = clampf(float(d.get("perf", 0.5)), 0.0, 1.0)
+	_rival_perf_fill.size.x = _rival_perf_w * perf
+	var sb: StyleBoxFlat = _rival_perf_fill.get_theme_stylebox("panel") as StyleBoxFlat
+	sb.bg_color = PERF_LOW.lerp(PERF_HIGH, perf)
+	_update_online_diff()
+
+
+## "Vas arriba +340" / "Vas abajo -120" según los puntos de cada uno.
+func _update_online_diff() -> void:
+	if _rival_diff_lbl == null or _rival_gone:
+		return
+	var diff: int = tracks[0].score - _rival_score
+	if diff > 0:
+		_rival_diff_lbl.text = "%s +%s" % [RB.t("VAS ARRIBA", "YOU LEAD"), RB.fmt_int(diff)]
+		_rival_diff_lbl.add_theme_color_override("font_color", PERF_HIGH)
+	elif diff < 0:
+		_rival_diff_lbl.text = "%s -%s" % [RB.t("VAS ABAJO", "YOU TRAIL"), RB.fmt_int(-diff)]
+		_rival_diff_lbl.add_theme_color_override("font_color", PERF_LOW)
+	else:
+		_rival_diff_lbl.text = RB.t("EMPATADOS", "TIED")
+		_rival_diff_lbl.add_theme_color_override("font_color", RB.GRAY_TXT)
+
+
+func _on_rival_finished(d: Dictionary) -> void:
+	_rival_final = d
+	if _rival_score_lbl != null:
+		_rival_score = int(d.get("score", 0))
+		_rival_score_lbl.text = RB.fmt_int(_rival_score)
+		_rival_combo_lbl.text = RB.t("¡TERMINÓ!", "FINISHED!")
+		_update_online_diff()
+
+
+func _on_rival_left(_reason: String) -> void:
+	_rival_gone = true
+	if _rival_combo_lbl != null:
+		_rival_combo_lbl.text = RB.t("DESCONECTADO", "DISCONNECTED")
+		_rival_combo_lbl.add_theme_color_override("font_color", PERF_LOW)
+		_rival_diff_lbl.text = ""
+
+
+## Al terminar: manda mi resultado, espera el del rival (si sigue conectado) y deja los
+## datos de los dos en GameState para que results.gd muestre las dos columnas.
+func _finish_online(t1: Track) -> void:
+	Net.send_finished({
+		"name": GameState.player1_name,
+		"instrument": t1.instrument,
+		"score": t1.score,
+		"combo": t1.max_combo,
+		"hits": t1.hit_count,
+		"total": t1.total_notes,
+		"acc": GameState.last_accuracy,
+	})
+	if _rival_final.is_empty() and Net.connected and not _rival_gone:
+		var vp: Vector2 = get_viewport_rect().size
+		_wait_lbl = _text(RB.t("Esperando al otro jugador…", "Waiting for the other player…"), 28, Color.WHITE, Vector2(0.0, vp.y * 0.30), vp.x, HORIZONTAL_ALIGNMENT_CENTER)
+		while _rival_final.is_empty() and Net.connected and not _rival_gone:
+			await get_tree().create_timer(0.2).timeout
+	if _rival_final.is_empty():
+		GameState.two_player_mode = false     # el rival se fue: resultados solo con mi columna
+		return
+	GameState.last_score_p2 = int(_rival_final.get("score", 0))
+	GameState.last_max_combo_p2 = int(_rival_final.get("combo", 0))
+	GameState.last_accuracy_p2 = float(_rival_final.get("acc", 0.0))
+	GameState.last_hit_notes_p2 = int(_rival_final.get("hits", 0))
+	GameState.last_total_notes_p2 = int(_rival_final.get("total", 0))
+	GameState.last_instrument_p2 = str(_rival_final.get("instrument", "guitarra"))
+	GameState.player2_name = str(_rival_final.get("name", GameState.player2_name))
+	GameState.two_player_mode = true          # results.gd dibuja las dos columnas
+## Abandonar una partida en línea

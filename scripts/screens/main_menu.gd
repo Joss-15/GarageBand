@@ -143,9 +143,10 @@ func _show_main_menu(first: bool) -> void:
 	_list.position = MAIN_POS
 	_list.set_items([
 		{"id": "play", "text": RB.t("JUGAR", "PLAY")},
+		{"id": "online", "text": RB.t("MULTIJUGADOR", "MULTIPLAYER")},
 		{"id": "options", "text": RB.t("OPCIONES", "OPTIONS")},
 		{"id": "quit", "text": RB.t("SALIR", "QUIT")},
-	], 0 if first else 1, true)
+	], 0 if first else 2, true)
 
 
 func _options_items() -> Array:
@@ -185,6 +186,8 @@ func _on_activated(id: String) -> void:
 	match id:
 		"play":
 			SceneFade.go("res://scenes/screens/song_select.tscn")
+		"online":
+			SceneFade.go("res://scenes/screens/online_lobby.tscn")
 		"options":
 			_show_options(0, true)
 		"quit":

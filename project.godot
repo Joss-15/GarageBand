@@ -25,6 +25,7 @@ GameState="*res://scripts/autoload/game_state.gd"
 Database="*res://scripts/autoload/database.gd"
 ScreenFilter="*res://scenes/autoload/screen_filter.tscn"
 SceneFade="*res://scripts/autoload/transition.gd"
+Net="*res://scripts/core/net.gd"
 
 [display]
 

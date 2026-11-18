@@ -9,10 +9,14 @@
 ## Dos jugadores: la columna del jugador 2 es una copia de la del 1 y ocupa el lugar
 ## de la tabla. A la derecha quedan el ganador, los dos campos de nombre y un solo
 ## botón para guardar ambos puntajes. La tabla de posiciones no cabe en este modo.
+##
+## En línea: igual que 2 jugadores (las dos columnas vienen de GameState, una de cada
+## peer), pero al salir o reiniciar se cierra la sesión de Net.
 extends Control
 
 const RB = preload("res://scripts/core/rb_theme.gd")
 const ROW_SCENE := preload("res://scenes/widgets/board_row.tscn")
+const LOBBY_SCENE := "res://scenes/screens/online_lobby.tscn"
 
 
 ## Nodos de la columna de estadísticas de un jugador.
@@ -100,9 +104,7 @@ func _ready() -> void:
 	_animate_in()
 
 
-# ── Jugador 2 (solo en modo de 2 jugadores) ─────────────────────────────────
-
-# ── Jugador 2 (solo en modo de 2 jugadores) ─────────────────────────────────
+# ── Jugador 2 (solo en modo de 2 jugadores / en línea) ─────────────────────
 
 func _build_player2() -> void:
 	# Un paso = ancho de una columna + el hueco entre la columna 1 y la tabla
@@ -110,14 +112,14 @@ func _build_player2() -> void:
 
 	var c2 := Col.new()
 	c2.block = _dup_shifted(_block, dx)
-	
+
 	if c2.block != null:
 		c2.acc_lbl = c2.block.get_node_or_null("AccLabel") as Label
 		c2.inst_lbl = c2.block.get_node_or_null("InstLabel") as Label
 		c2.rank_bar = c2.block.get_node_or_null("RankBar") as Control
 		if c2.rank_bar != null:
 			c2.rank_label = c2.rank_bar.get_node_or_null("RankLabel") as Label
-	
+
 	if c2.acc_lbl == null: c2.acc_lbl = _dup_shifted(_acc_lbl, dx) as Label
 	if c2.inst_lbl == null: c2.inst_lbl = _dup_shifted(_inst_lbl, dx) as Label
 	if c2.rank_bar == null: c2.rank_bar = _dup_shifted(_rank_bar, dx) as Control
@@ -126,7 +128,7 @@ func _build_player2() -> void:
 	c2.combo_lbl = _dup_shifted(_combo_lbl, dx) as Label
 	c2.notes_lbl = _dup_shifted(_notes_lbl, dx) as Label
 	c2.solo = _dup_shifted(_solo, dx)
-	
+
 	if c2.solo != null:
 		c2.solo_icon = c2.solo.get_node_or_null("SoloIcon") as Control
 		c2.score_lbl = c2.solo.get_node_or_null("ScoreCardLabel") as Label
@@ -146,7 +148,7 @@ func _build_player2() -> void:
 func _dup_shifted(src: Control, dx: float) -> Control:
 	if src == null:
 		return null
-		
+
 	var copy: Control = src.duplicate() as Control
 	_clear_unique(copy)
 	var parent: Node = src.get_parent()
@@ -275,11 +277,13 @@ func _fill_texts() -> void:
 		_name_edit.placeholder_text = RB.t("Tu nombre", "Your name")
 		if GameState.player1_name != "P1":
 			_name_edit.text = GameState.player1_name
-			
+
 	if _two and _name_edit2 != null:
 		_name_edit2.placeholder_text = RB.t("Tu nombre", "Your name")
 		if GameState.player2_name != "P2":
 			_name_edit2.text = GameState.player2_name
+
+
 func _play_intro() -> void:
 	create_tween().set_loops().tween_property(_medallion, "rotation", TAU, 16.0).from(0.0)
 	RB.slide_in(_title, Vector2(0.0, -30.0), 0.0, 0.5)
@@ -430,6 +434,14 @@ func _board_message(text: String) -> void:
 
 # ── Salida ───────────────────────────────────────────────────────────────────
 
+## Cierra la sesión en línea (si la había) y limpia las banderas del modo en línea.
+func _leave_online() -> void:
+	if GameState.online_mode:
+		Net.leave()
+		GameState.online_mode = false
+		GameState.two_player_mode = false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _leaving:
 		return
@@ -438,11 +450,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
 		_leaving = true
+		_leave_online()
 		SceneFade.go("res://scenes/screens/song_select.tscn")
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey:
 		var k := event as InputEventKey
 		if k.pressed and not k.echo and k.keycode == KEY_R:
 			_leaving = true
-			SceneFade.go("res://scenes/gameplay/gameplay.tscn")
+			if GameState.online_mode and Net.active and Net.connected:
+				SceneFade.go(LOBBY_SCENE)       # sigue conectado: se vuelve a la sala para otra ronda
+			else:
+				_leave_online()                 # en línea sin rival: se juega en solitario
+				SceneFade.go("res://scenes/gameplay/gameplay.tscn")
 			get_viewport().set_input_as_handled()
