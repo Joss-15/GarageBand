@@ -26,6 +26,10 @@ var color: Color = Color.WHITE
 var highway: Node2D = null
 var fall_time: float = 2.0
 
+## Nota "fantasma": la del carril del rival en línea. No se juega aquí: se resuelve con los
+## eventos que manda el rival (acierto la quita, fallo la apaga) y si no llega nada se retira sola.
+var ghost: bool = false
+
 var _judged: bool = false
 var _k: float = 547.0         # hit_y - horizon_y
 var _lateral: float = 0.0     # distancia de su carril al centro del highway
@@ -53,7 +57,10 @@ func _draw() -> void:
 ## Posiciona la nota según el tiempo actual de la canción y detecta el fallo.
 func update_for_time(song_time: float) -> void:
 	var dt: float = beat_time - song_time
-	if not _judged and dt < -HIT_WINDOW_BAD:
+	if ghost and dt < -0.5:
+		queue_free()
+		return
+	if not ghost and not _judged and dt < -HIT_WINDOW_BAD:
 		_judged = true
 		note_missed.emit(lane)
 		queue_free()
@@ -65,6 +72,12 @@ func update_for_time(song_time: float) -> void:
 	queue_redraw()
 	# aparece suavemente al entrar por el fondo
 	modulate.a = clampf((fall_time - dt) / 0.35, 0.0, 1.0)
+
+
+## Fantasma: el rival la falló. Se ve apagada mientras termina de pasar.
+func ghost_miss() -> void:
+	color = Color(0.40, 0.41, 0.46)
+	queue_redraw()
 
 
 ## Intenta registrar un golpe. Devuelve true si fue válido.

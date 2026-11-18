@@ -174,3 +174,44 @@ unique_name_in_owner = true
 
 [node name="PauseMenu" parent="." unique_id=667472099 instance=ExtResource("10_pause")]
 unique_name_in_owner = true
+
+[node name="YouHereLayer" type="CanvasLayer" parent="."]
+layer = 6
+
+[node name="YouHere" type="Control" parent="YouHereLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="YouHereLabel" type="Label" parent="YouHereLayer/YouHere"]
+layout_mode = 0
+offset_left = -260.0
+offset_top = 246.0
+offset_right = 260.0
+offset_bottom = 306.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 12
+theme_override_fonts/font = ExtResource("11_bold")
+theme_override_font_sizes/font_size = 46
+text = "TU JUEGAS AQUÍ"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/en = "YOU PLAY HERE"
+
+[node name="YouArrow" type="Node2D" parent="YouHereLayer/YouHere"]
+unique_name_in_owner = true
+position = Vector2(0, 318)
+
+[node name="ArrowOutline" type="Polygon2D" parent="YouHereLayer/YouHere/YouArrow"]
+position = Vector2(0, -4)
+scale = Vector2(1.14, 1.14)
+color = Color(0, 0, 0, 0.9)
+polygon = PackedVector2Array(-16, 0, 16, 0, 16, 44, 44, 44, 0, 96, -44, 44, -16, 44)
+
+[node name="ArrowFill" type="Polygon2D" parent="YouHereLayer/YouHere/YouArrow"]
+color = Color(1, 0.88, 0.1, 1)
+polygon = PackedVector2Array(-16, 0, 16, 0, 16, 44, 44, 44, 0, 96, -44, 44, -16, 44)

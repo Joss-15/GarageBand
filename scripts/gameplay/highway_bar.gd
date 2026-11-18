@@ -61,6 +61,8 @@ const SYMBOLS := {
 ## Nombre de lo que se presiona en el carril i: el botón del control si hay un control
 ## conectado y la acción tiene botón; si no, la tecla. "?" si no tiene ninguno.
 func key_label(i: int) -> String:
+	if action_prefix == "":
+		return ""        # carril del rival en línea: no muestra teclas
 	var action: String = "%s%d" % [action_prefix, i]
 
 	if not InputMap.has_action(action):
@@ -130,6 +132,8 @@ func _draw() -> void:
 	var f: Font = font if font != null else ThemeDB.fallback_font
 	for i in lane_count:
 		var key_name: String = key_label(i)
+		if key_name == "":
+			continue
 		var cx: float = center_x + (float(i) - (float(lane_count) - 1.0) * 0.5) * lane_w
 		var col: Color = LANE_COLORS[i % LANE_COLORS.size()]
 		draw_string_outline(f, Vector2(cx - 30.0, y + 54.0), key_name, HORIZONTAL_ALIGNMENT_CENTER, 60.0, 24, 6, Color(0.0, 0.0, 0.0, 0.9))

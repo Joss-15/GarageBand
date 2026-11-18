@@ -5,8 +5,10 @@
 ## En 1 jugador se usa el HUD de siempre (%Hud). En 2 jugadores ese HUD se oculta
 ## y se dibuja uno compacto sobre cada carril.
 ##
-## Modo en línea: un solo carril local (el rival se ve en un panel a la derecha),
-## cuenta regresiva común y sincronización de estado vía Net.
+## Modo en línea: dos carriles como en 2 jugadores. El mío se juega con mis teclas; el del
+## rival es un "fantasma": se dibujan las notas de su instrumento con el mismo reloj de la
+## canción y se le aplican en vivo los golpes que manda por Net (acierto, fallo, teclas),
+## con su HUD de puntos, combo y precisión. La cuenta regresiva es común.
 extends Node2D
 
 const RB = preload("res://scripts/core/rb_theme.gd")
@@ -65,6 +67,7 @@ class Track:
 	var perf_w: float = 0.0
 	var judge_lbl: Label = null
 	var judge_tween: Tween = null
+	var ghost: bool = false         # carril del rival en línea (lo mueven los eventos de Net)
 
 
 @onready var audio_player: AudioStreamPlayer = $AudioStreamPlayer
@@ -73,9 +76,12 @@ class Track:
 @onready var _hud: Control = %Hud
 @onready var _pause: CanvasLayer = %PauseMenu
 @onready var _stage_fx: Node2D = %StageFx
+@onready var _you_here: Control = %YouHere
+@onready var _you_arrow: Node2D = %YouArrow
 
 var tracks: Array = []
 var two_player: bool = false
+var split: bool = false          # dos carriles en pantalla: 2 jugadores locales o en línea
 
 var game_started: bool = false
 var game_ended: bool = false
@@ -96,16 +102,10 @@ var online: bool = false
 var _online_waiting: bool = false     # esperando la hora de inicio (cuenta regresiva)
 var _online_start_msec: int = 0
 var _countdown_lbl: Label = null
-var _state_timer: float = 0.0
 var _rival_final: Dictionary = {}     # resultado final del rival, cuando llega
 var _rival_gone: bool = false
-var _rival_score: int = 0
-var _rival_score_lbl: Label = null
-var _rival_combo_lbl: Label = null
-var _rival_acc_lbl: Label = null
-var _rival_diff_lbl: Label = null
-var _rival_perf_fill: Panel = null
-var _rival_perf_w: float = 0.0
+var _diff_cap: Label = null           # "VENTAJA" entre los dos carriles
+var _diff_lbl: Label = null
 var _wait_lbl: Label = null
 
 
@@ -131,6 +131,7 @@ func _ready() -> void:
 	# En línea hay un solo carril local (el del rival es el panel de la derecha)
 	online = GameState.online_mode and Net.active and Net.connected
 	two_player = GameState.two_player_mode and not online
+	split = two_player or online
 
 	var beatmap: Dictionary = GameState.current_beatmap
 	if beatmap.is_empty():
@@ -146,12 +147,12 @@ func _ready() -> void:
 
 	var vp: Vector2 = get_viewport_rect().size
 	var hit_y: float = vp.y - HIGHWAY_BOTTOM_MARGIN
-	if two_player:
+	if split:
 		_build_two_player(vp, hit_y, beatmap)
 	else:
 		_build_solo(vp, hit_y, beatmap)
 
-	if not two_player:
+	if not split:
 		_setup_hud()
 	_connect_pause()
 
@@ -182,7 +183,7 @@ func _build_two_player(vp: Vector2, hit_y: float, beatmap_p1: Dictionary) -> voi
 
 	# La barra de cada carril muestra las teclas de su jugador (lane_* / p2_lane_*)
 	highway.get_node("Bar").action_prefix = "lane_"
-	highway_p2.get_node("Bar").action_prefix = "p2_lane_"
+	highway_p2.get_node("Bar").action_prefix = "" if online else "p2_lane_"
 
 	highway.setup(vp, hit_y, HIGHWAY_TOP_Y, LANE_W, FAR_Z, NOTE_FALL_TIME, cx1)
 	highway_p2.setup(vp, hit_y, HIGHWAY_TOP_Y, LANE_W, FAR_Z, NOTE_FALL_TIME, cx2)
@@ -190,7 +191,8 @@ func _build_two_player(vp: Vector2, hit_y: float, beatmap_p1: Dictionary) -> voi
 	_place_receptors(highway_p2)
 
 	var trk1: Track = _make_track(0, P1_ACTIONS, highway, GameState.selected_instrument, beatmap_p1)
-	var trk2: Track = _make_track(1, P2_ACTIONS, highway_p2, GameState.selected_instrument_p2, beatmap_p2)
+	var trk2: Track = _make_track(1, [] if online else P2_ACTIONS, highway_p2, GameState.selected_instrument_p2, beatmap_p2)
+	trk2.ghost = online
 	tracks.append(trk1)
 	tracks.append(trk2)
 
@@ -333,6 +335,10 @@ func _build_compact_hud(trk: Track, center_x: float) -> void:
 
 	# Jugador · instrumento
 	var player_text: String = RB.t("JUGADOR %d", "PLAYER %d") % (trk.index + 1)
+	if online:
+		var pname: String = GameState.player1_name if trk.index == 0 else GameState.player2_name
+		if pname != "" and pname != "P1" and pname != "P2":
+			player_text = pname
 	var header: String = "%s · %s" % [player_text, RB.instrument_name(trk.instrument)]
 	_text(header.to_upper(), 20, accent, Vector2(xr, 90.0), wr)
 
@@ -409,15 +415,13 @@ func _process(_delta: float) -> void:
 	_update_progress(t)
 	for trk: Track in tracks:
 		_update_track(trk, t)
-	if online:
-		_send_online_state(_delta, t)
 
 	if not audio_player.playing and _all_pending_empty():
 		_end_game()
 
 
 func _update_progress(t: float) -> void:
-	if two_player:
+	if split:
 		if _prog_fill != null:
 			_prog_fill.size.x = (PROG_W - 4.0) * clampf(t / maxf(_duration, 1.0), 0.0, 1.0)
 		var sec: int = int(t)
@@ -442,7 +446,8 @@ func _update_track(trk: Track, t: float) -> void:
 		for n in trk.active[lane]:
 			if is_instance_valid(n) and not n.is_queued_for_deletion():
 				n.update_for_time(t)
-	_process_input(trk, t)
+	if not trk.ghost:
+		_process_input(trk, t)
 
 
 func _spawn_pending(trk: Track, song_time: float) -> void:
@@ -464,8 +469,11 @@ func _spawn_note(trk: Track, beat_time: float, lane: int) -> void:
 	notes_root.add_child(note)
 	var col: Color = RB.LANE_COLORS[lane]
 	note.setup(lane, beat_time, col, trk.highway, NOTE_FALL_TIME)
-	note.note_hit.connect(_on_note_hit.bind(trk))
-	note.note_missed.connect(_on_note_missed.bind(trk))
+	if trk.ghost:
+		note.ghost = true       # lo resuelven los eventos del rival
+	else:
+		note.note_hit.connect(_on_note_hit.bind(trk, beat_time))
+		note.note_missed.connect(_on_note_missed.bind(trk, beat_time))
 	trk.active[lane].append(note)
 
 
@@ -475,6 +483,8 @@ func _process_input(trk: Track, t: float) -> void:
 			continue
 		trk.receptors[lane].animate_press()
 		trk.highway.press_lane(lane, 1.0)
+		if online:
+			Net.send_event({"k": "p", "l": lane})
 
 		var has_hittable: bool = false
 		for n in trk.active[lane]:
@@ -487,6 +497,8 @@ func _process_input(trk: Track, t: float) -> void:
 		else:
 			# Presionar al aire también es fallo y rompe el combo
 			_register_miss(trk)
+			if online:
+				Net.send_event({"k": "a", "l": lane})
 
 
 func _hit_lane(trk: Track, lane: int, song_time: float) -> void:
@@ -509,7 +521,9 @@ func _prune(trk: Track, lane: int) -> void:
 	trk.active[lane] = trk.active[lane].filter(func(n): return is_instance_valid(n) and not n.is_queued_for_deletion())
 
 
-func _on_note_hit(lane: int, accuracy: float, trk: Track) -> void:
+func _on_note_hit(lane: int, accuracy: float, trk: Track, beat_time: float = -1.0) -> void:
+	if online and not trk.ghost:
+		Net.send_event({"k": "h", "l": lane, "a": accuracy, "bt": beat_time})
 	_prune(trk, lane)
 	if lane < trk.receptors.size():
 		trk.receptors[lane].animate_hit(accuracy)
@@ -533,7 +547,7 @@ func _on_note_hit(lane: int, accuracy: float, trk: Track) -> void:
 	if accuracy >= 0.55:
 		judge_col = col.lightened(0.25)
 
-	if two_player:
+	if split:
 		trk.score_lbl.text = RB.fmt_int(trk.score)
 		RB.pop(trk.score_lbl, 1.06, 0.18)
 		_compact_combo(trk)
@@ -552,7 +566,9 @@ func _on_note_hit(lane: int, accuracy: float, trk: Track) -> void:
 	_stage_fx.pulse(0.55 if accuracy >= 0.95 else 0.25)
 
 
-func _on_note_missed(lane: int, trk: Track) -> void:
+func _on_note_missed(lane: int, trk: Track, beat_time: float = -1.0) -> void:
+	if online and not trk.ghost:
+		Net.send_event({"k": "m", "l": lane, "bt": beat_time})
 	_prune(trk, lane)
 	_register_miss(trk)
 
@@ -560,7 +576,7 @@ func _on_note_missed(lane: int, trk: Track) -> void:
 func _register_miss(trk: Track) -> void:
 	trk.miss_count += 1
 	trk.combo = 0
-	if two_player:
+	if split:
 		_compact_combo(trk)
 		_compact_accuracy(trk)
 		_show_compact_judge(trk, RB.t("FALLO", "MISS"), Color(1.0, 0.25, 0.25))
@@ -580,7 +596,7 @@ func _live_accuracy(trk: Track) -> float:
 
 func _update_performance(trk: Track, value: float) -> void:
 	trk.performance = lerpf(trk.performance, value, 0.12)
-	if two_player:
+	if split:
 		_set_perf_bar(trk)
 	else:
 		_hud.set_performance(trk.performance)
@@ -685,14 +701,14 @@ func _leave_online_match() -> void:
 
 func _setup_online() -> void:
 	_ensure_hud_layer()
-	_build_rival_panel()
+	_build_diff_label()
 	var vp: Vector2 = get_viewport_rect().size
 	_online_start_msec = GameState.online_start_at_msec
 	_online_waiting = true
 	_countdown_lbl = _text("", 120, RB.GOLD_BRIGHT, Vector2(0.0, vp.y * 0.28), vp.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_countdown_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 	_countdown_lbl.add_theme_constant_override("outline_size", 10)
-	Net.rival_state.connect(_on_rival_state)
+	Net.rival_event.connect(_on_rival_event)
 	Net.rival_finished.connect(_on_rival_finished)
 	Net.peer_left.connect(_on_rival_left)
 
@@ -709,83 +725,109 @@ func _tick_online_countdown() -> void:
 	_countdown_lbl.visible = false
 	audio_player.play()
 	game_started = true
+	_show_you_here()
 
 
-func _send_online_state(delta: float, t: float) -> void:
-	_state_timer -= delta
-	if _state_timer > 0.0:
-		return
-	_state_timer = Net.STATE_INTERVAL
-	var trk: Track = tracks[0]
-	Net.send_state({"score": trk.score, "combo": trk.combo, "acc": _live_accuracy(trk), "perf": trk.performance, "t": t})
-
-
-## Panel del rival (derecha, bajo el HUD): nombre, puntos, precisión, combo y rendimiento.
-func _build_rival_panel() -> void:
+## Al empezar en línea: «TU JUEGAS AQUÍ» con una flecha sobre mi carril (el de la izquierda),
+## unos 5 segundos, para que nadie confunda cuál es el suyo. Los nodos viven en la escena.
+func _show_you_here() -> void:
 	var vp: Vector2 = get_viewport_rect().size
-	var w: float = 288.0
-	var x: float = vp.x - w - 14.0
-	var y: float = 176.0
-	var accent: Color = Color(0.35, 0.80, 1.0)
+	_you_here.position = Vector2(vp.x * 0.25, 0.0)
+	_you_here.modulate.a = 0.0
+	_you_here.visible = true
 
-	_box(Vector2(x, y), Vector2(w, 150.0), BOX_BG, accent, 2, 10)
-	var rival_name: String = GameState.player2_name if GameState.player2_name != "P2" else RB.t("RIVAL", "RIVAL")
-	var header: String = "%s · %s" % [rival_name, RB.instrument_name(GameState.selected_instrument_p2)]
-	_text(header.to_upper(), 16, accent, Vector2(x + 12.0, y + 6.0), w - 24.0)
-	_rival_score_lbl = _text("0", 38, Color.WHITE, Vector2(x, y + 28.0), w - 14.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	_rival_acc_lbl = _text("%s 100.0%%" % RB.t("PRECISIÓN", "ACCURACY"), 14, RB.GRAY_TXT, Vector2(x + 12.0, y + 78.0), w - 24.0, HORIZONTAL_ALIGNMENT_LEFT, false)
-	_rival_combo_lbl = _text("COMBO 0", 14, RB.GRAY_TXT, Vector2(x + 12.0, y + 98.0), w - 24.0, HORIZONTAL_ALIGNMENT_LEFT, false)
-	_rival_diff_lbl = _text("", 16, RB.GRAY_TXT, Vector2(x + 12.0, y + 98.0), w - 24.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	_box(Vector2(x + 12.0, y + 128.0), Vector2(w - 24.0, 10.0), TRACK_BG, TRACK_BORDER, 2, 5)
-	_rival_perf_w = w - 28.0
-	_rival_perf_fill = _box(Vector2(x + 14.0, y + 130.0), Vector2(_rival_perf_w * 0.5, 6.0), PERF_LOW.lerp(PERF_HIGH, 0.5), PERF_LOW, 0, 3)
+	var arrow_y: float = _you_arrow.position.y
+	var bob: Tween = create_tween().set_loops()
+	bob.tween_property(_you_arrow, "position:y", arrow_y + 16.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	bob.tween_property(_you_arrow, "position:y", arrow_y, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var tw: Tween = create_tween()
+	tw.tween_property(_you_here, "modulate:a", 1.0, 0.4)
+	tw.tween_interval(4.0)
+	tw.tween_property(_you_here, "modulate:a", 0.0, 0.6)
+	tw.finished.connect(func() -> void:
+		bob.kill()
+		_you_here.visible = false)
 
 
-func _on_rival_state(d: Dictionary) -> void:
-	if _rival_score_lbl == null:
+## Ventaja entre los dos carriles, en el hueco central entre los HUD (sin tapar nada).
+func _build_diff_label() -> void:
+	var vp: Vector2 = get_viewport_rect().size
+	var gap_x: float = vp.x * 0.25 + HUD_W * 0.5
+	var gap_w: float = vp.x * 0.5 - HUD_W
+	_diff_cap = _text(RB.t("VENTAJA", "LEAD"), 13, RB.GRAY_TXT, Vector2(gap_x, 128.0), gap_w, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_diff_lbl = _text("0", 30, RB.GRAY_TXT, Vector2(gap_x, 144.0), gap_w, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+## Aplica en el carril del rival lo que él hizo en su máquina.
+func _on_rival_event(d: Dictionary) -> void:
+	if tracks.size() < 2 or game_ended:
 		return
-	_rival_score = int(d.get("score", 0))
-	_rival_score_lbl.text = RB.fmt_int(_rival_score)
-	_rival_combo_lbl.text = "COMBO %d" % int(d.get("combo", 0))
-	_rival_acc_lbl.text = "%s %.1f%%" % [RB.t("PRECISIÓN", "ACCURACY"), float(d.get("acc", 100.0))]
-	var perf: float = clampf(float(d.get("perf", 0.5)), 0.0, 1.0)
-	_rival_perf_fill.size.x = _rival_perf_w * perf
-	var sb: StyleBoxFlat = _rival_perf_fill.get_theme_stylebox("panel") as StyleBoxFlat
-	sb.bg_color = PERF_LOW.lerp(PERF_HIGH, perf)
-	_update_online_diff()
+	var ghost: Track = tracks[1]
+	var lane: int = int(d.get("l", -1))
+	if lane < 0 or lane >= LANE_COUNT:
+		return
+	match str(d.get("k", "")):
+		"p":
+			ghost.receptors[lane].animate_press()
+			ghost.highway.press_lane(lane, 1.0)
+		"h":
+			var hit_note: Node2D = _find_ghost_note(ghost, lane, float(d.get("bt", -1.0)))
+			if hit_note != null:
+				hit_note.queue_free()
+			_on_note_hit(lane, float(d.get("a", 0.3)), ghost)
+		"m":
+			var miss_note: Node2D = _find_ghost_note(ghost, lane, float(d.get("bt", -1.0)))
+			if miss_note != null:
+				miss_note.ghost_miss()
+			_register_miss(ghost)
+		"a":
+			_register_miss(ghost)
 
 
-## "Vas arriba +340" / "Vas abajo -120" según los puntos de cada uno.
+## Nota del carril del rival que corresponde a un golpe suyo (mismo carril, tiempo casi igual).
+func _find_ghost_note(trk: Track, lane: int, beat_time: float) -> Node2D:
+	if beat_time < 0.0:
+		return null
+	var best: Node2D = null
+	var best_d: float = 0.25
+	for n in trk.active[lane]:
+		if is_instance_valid(n) and not n.is_queued_for_deletion():
+			var d: float = absf(float(n.beat_time) - beat_time)
+			if d < best_d:
+				best_d = d
+				best = n
+	return best
+
+
+## "+340" si voy arriba, "-120" si voy abajo.
 func _update_online_diff() -> void:
-	if _rival_diff_lbl == null or _rival_gone:
+	if _diff_lbl == null or _rival_gone or tracks.size() < 2:
 		return
-	var diff: int = tracks[0].score - _rival_score
+	var diff: int = tracks[0].score - tracks[1].score
 	if diff > 0:
-		_rival_diff_lbl.text = "%s +%s" % [RB.t("VAS ARRIBA", "YOU LEAD"), RB.fmt_int(diff)]
-		_rival_diff_lbl.add_theme_color_override("font_color", PERF_HIGH)
+		_diff_lbl.text = "+%s" % RB.fmt_int(diff)
+		_diff_lbl.add_theme_color_override("font_color", PERF_HIGH)
 	elif diff < 0:
-		_rival_diff_lbl.text = "%s -%s" % [RB.t("VAS ABAJO", "YOU TRAIL"), RB.fmt_int(-diff)]
-		_rival_diff_lbl.add_theme_color_override("font_color", PERF_LOW)
+		_diff_lbl.text = "-%s" % RB.fmt_int(-diff)
+		_diff_lbl.add_theme_color_override("font_color", PERF_LOW)
 	else:
-		_rival_diff_lbl.text = RB.t("EMPATADOS", "TIED")
-		_rival_diff_lbl.add_theme_color_override("font_color", RB.GRAY_TXT)
+		_diff_lbl.text = "0"
+		_diff_lbl.add_theme_color_override("font_color", RB.GRAY_TXT)
 
 
 func _on_rival_finished(d: Dictionary) -> void:
 	_rival_final = d
-	if _rival_score_lbl != null:
-		_rival_score = int(d.get("score", 0))
-		_rival_score_lbl.text = RB.fmt_int(_rival_score)
-		_rival_combo_lbl.text = RB.t("¡TERMINÓ!", "FINISHED!")
-		_update_online_diff()
+	if _diff_cap != null:
+		_diff_cap.text = RB.t("¡TERMINÓ!", "FINISHED!")
 
 
 func _on_rival_left(_reason: String) -> void:
 	_rival_gone = true
-	if _rival_combo_lbl != null:
-		_rival_combo_lbl.text = RB.t("DESCONECTADO", "DISCONNECTED")
-		_rival_combo_lbl.add_theme_color_override("font_color", PERF_LOW)
-		_rival_diff_lbl.text = ""
+	if _diff_cap != null:
+		_diff_cap.text = RB.t("DESCONECTADO", "DISCONNECTED")
+		_diff_cap.add_theme_color_override("font_color", PERF_LOW)
+		_diff_lbl.text = ""
 
 
 ## Al terminar: manda mi resultado, espera el del rival (si sigue conectado) y deja los

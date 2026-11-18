@@ -20,6 +20,7 @@ signal rival_changed                        # cambió nombre / instrumento / lis
 signal song_changed                         # el host eligió otra canción
 signal countdown_started(seconds: float)    # empieza la cuenta regresiva de la partida
 signal rival_state(data: Dictionary)        # estado en vivo del rival
+signal rival_event(data: Dictionary)        # golpe del rival (tecla, acierto o fallo) para su carril en vivo
 signal rival_finished(data: Dictionary)     # resultado final del rival
 signal stage_changed(stage: String)         # el host cambió la etapa de la sala (canción / instrumento)
 
@@ -271,6 +272,18 @@ func send_state(data: Dictionary) -> void:
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func _rpc_state(data: Dictionary) -> void:
 	rival_state.emit(data)
+
+
+## Golpe propio para el carril del rival: {k: "p" tecla | "h" acierto | "m" nota perdida | "a" tecla al aire,
+## l: carril, a: precisión, bt: tiempo de la nota}. Es fiable: no se debe perder ninguno.
+func send_event(data: Dictionary) -> void:
+	if connected:
+		_rpc_event.rpc(data)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_event(data: Dictionary) -> void:
+	rival_event.emit(data)
 
 
 ## Resultado final de la partida (llega siempre).
