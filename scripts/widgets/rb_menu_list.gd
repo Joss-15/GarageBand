@@ -165,7 +165,7 @@ func _apply_selection(animate: bool) -> void:
 		target_pos = Vector2(sx0, carousel_center_y - row_height * 0.5)
 		target_size = Vector2(cw, row_height)
 	else:
-		var sx: float = 0.0 if slab_width > 0.0 else lbl.position.x - text_padding_left - slab_pad
+		var sx: float = 0.0 if slab_width > 0.0 else indent_step * float(selected) - slab_pad
 		var sw: float = slab_width if slab_width > 0.0 else lbl.size.x + text_padding_left + slab_pad * 2.0
 		target_pos = Vector2(sx, row_height * float(selected))
 		target_size = Vector2(sw, row_height)

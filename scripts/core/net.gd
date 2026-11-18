@@ -21,11 +21,19 @@ signal song_changed                         # el host eligió otra canción
 signal countdown_started(seconds: float)    # empieza la cuenta regresiva de la partida
 signal rival_state(data: Dictionary)        # estado en vivo del rival
 signal rival_finished(data: Dictionary)     # resultado final del rival
+signal stage_changed(stage: String)         # el host cambió la etapa de la sala (canción / instrumento)
 
 const DEFAULT_PORT := 24680
 const COUNTDOWN := 3.0                      # segundos de cuenta regresiva antes de empezar
 const STATE_INTERVAL := 0.1                 # cada cuánto se manda el estado en vivo
 const PING_INTERVAL := 1.0
+## Etapas de la sala y la escena de cada una. Las dos pantallas son las mismas del juego
+## individual; en línea el host las maneja y el invitado las sigue.
+const STAGE_SCENES := {
+	"song": "res://scenes/screens/song_select.tscn",
+	"instrument": "res://scenes/screens/seleccion_instrumento.tscn",
+}
+const LOBBY_SCENE := "res://scenes/screens/online_lobby.tscn"
 const JOIN_TIMEOUT := 6.0                   # Godot no avisa si la IP no responde, así que hay tiempo límite propio
 
 var active: bool = false        # hay una sesión abierta (creada o unida)
@@ -35,6 +43,8 @@ var local: Dictionary = {"name": "Jugador", "instrument": "guitarra", "ready": f
 var rival: Dictionary = {"name": "", "instrument": "guitarra", "ready": false}
 var song: Dictionary = {}       # canción elegida por el host: {name, title, artist, md5}
 var rtt_ms: float = 0.0         # latencia de ida y vuelta medida
+var stage: String = ""          # etapa actual de la sala: "", "song" o "instrument"
+var notice: String = ""         # aviso para mostrar en el lobby (p. ej. "el rival se desconectó")
 
 var _ping_timer: float = 0.0
 var _join_left: float = 0.0     # cuenta atrás mientras el invitado intenta conectarse
@@ -86,6 +96,7 @@ func leave() -> void:
 	connected = false
 	_join_left = 0.0
 	song = {}
+	stage = ""
 	rtt_ms = 0.0
 	local["ready"] = false
 	rival = {"name": "", "instrument": "guitarra", "ready": false}
@@ -146,9 +157,23 @@ func _on_connection_failed() -> void:
 
 func _rival_gone(reason: String) -> void:
 	connected = false
+	stage = ""
+	song = {}
 	rival = {"name": "", "instrument": "guitarra", "ready": false}
 	local["ready"] = false
+	notice = reason
 	peer_left.emit(reason)
+	# En las pantallas de la sala no hay nada que hacer sin rival: vuelve al lobby.
+	# (Durante la partida o en resultados cada pantalla maneja la salida por su cuenta.)
+	var path: String = _current_scene_path()
+	if path in STAGE_SCENES.values():
+		GameState.online_mode = false
+		SceneFade.go(LOBBY_SCENE)
+
+
+func _current_scene_path() -> String:
+	var cs: Node = get_tree().current_scene
+	return cs.scene_file_path if cs != null else ""
 
 
 # ── Datos de la sala ─────────────────────────────────────────────────────────
@@ -168,6 +193,37 @@ func _send_info() -> void:
 func _rpc_info(info: Dictionary) -> void:
 	rival = info
 	rival_changed.emit()
+
+
+## El host cambia de etapa y arrastra al invitado a la misma pantalla.
+func go_stage(new_stage: String) -> void:
+	if not is_host or not connected:
+		return
+	_rpc_stage.rpc(new_stage)
+	_apply_stage(new_stage)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_stage(new_stage: String) -> void:
+	_apply_stage(new_stage)
+
+
+func _apply_stage(new_stage: String) -> void:
+	stage = new_stage
+	GameState.online_mode = true
+	GameState.two_player_mode = false
+	GameState.player1_name = str(local["name"])
+	GameState.player2_name = str(rival.get("name", ""))
+	if new_stage == "song":
+		local["ready"] = false
+		_send_info()
+	stage_changed.emit(new_stage)
+	if not STAGE_SCENES.has(new_stage):
+		return
+	var path: String = STAGE_SCENES[new_stage]
+	# Si el invitado está en plena partida no se le arranca de ella
+	if _current_scene_path() != path and not _current_scene_path().contains("gameplay"):
+		SceneFade.go(path)
 
 
 ## El host elige la canción. song = {name, title, artist, md5}.

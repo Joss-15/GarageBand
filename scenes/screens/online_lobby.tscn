@@ -1,12 +1,338 @@
 [gd_scene format=3 uid="uid://bjdxbicsrrqty"]
 
-[ext_resource type="Script" uid="uid://dkdbb4si4wnpw" path="res://scripts/screens/online_lobby.gd" id="1"]
+[ext_resource type="Script" uid="uid://dkdbb4si4wnpw" path="res://scripts/screens/online_lobby.gd" id="1_ol"]
+[ext_resource type="PackedScene" path="res://scenes/widgets/rb_backdrop.tscn" id="2_bd"]
+[ext_resource type="PackedScene" uid="uid://i4mskhimmw8h" path="res://scenes/widgets/rb_menu_list.tscn" id="5_list"]
+[ext_resource type="PackedScene" uid="uid://2pd5vusebxp6" path="res://scenes/widgets/hint_item.tscn" id="6_hint"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_bold.tres" id="8_bold"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_regular.tres" id="9_regular"]
+[ext_resource type="SystemFont" path="res://assets/ui/font_italic.tres" id="10_italic"]
 
-[node name="OnlineLobby" type="Control" unique_id=752743270]
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+bg_color = Color(0.05, 0.06, 0.11, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="sb_input"]
+content_margin_left = 14.0
+content_margin_right = 14.0
+bg_color = Color(0.02, 0.03, 0.06, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.42, 0.5, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_input_off"]
+content_margin_left = 14.0
+content_margin_right = 14.0
+bg_color = Color(0.03, 0.03, 0.05, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.26, 0.32, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_input_focus"]
+content_margin_left = 14.0
+content_margin_right = 14.0
+bg_color = Color(0.04, 0.05, 0.1, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.82, 0.1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_info"]
+bg_color = Color(0.02, 0.03, 0.06, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.42, 0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_hintbar"]
+bg_color = Color(0.13, 0.13, 0.15, 0.95)
+
+[node name="OnlineLobby" type="Control" unique_id=1301732926]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1")
+script = ExtResource("1_ol")
+
+[node name="Backdrop" parent="." unique_id=1412455735 instance=ExtResource("2_bd")]
+layout_mode = 1
+tint = Color(0.26, 0.3, 0.6, 1)
+photo_brightness = 0.42
+
+[node name="Veil" type="ColorRect" parent="." unique_id=2116281884]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0.02, 0.38)
+
+[node name="Title" type="Label" parent="." unique_id=1859199065]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 88.0
+theme_override_colors/font_color = Color(0.88, 0.89, 0.92, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 58
+text = "MULTIJUGADOR EN LÍNEA"
+metadata/en = "ONLINE MULTIPLAYER"
+
+[node name="Msg" type="Label" parent="." unique_id=560605439]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 46.0
+offset_top = 86.0
+offset_right = 1100.0
+offset_bottom = 122.0
+theme_override_colors/font_color = Color(0.78, 0.8, 0.88, 1)
+theme_override_fonts/font = ExtResource("10_italic")
+theme_override_font_sizes/font_size = 22
+text = "Por IP directa: misma red local, o con una VPN (Radmin, ZeroTier, Hamachi)."
+metadata/en = "Direct IP: same local network, or over a VPN (Radmin, ZeroTier, Hamachi)."
+
+[node name="ConnectView" type="Control" parent="." unique_id=1844513384]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="FieldsCard" type="Panel" parent="ConnectView" unique_id=621706033]
+layout_mode = 0
+offset_left = 46.0
+offset_top = 140.0
+offset_right = 566.0
+offset_bottom = 460.0
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="NameLabel" type="Label" parent="ConnectView/FieldsCard" unique_id=248443511]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 18.0
+offset_right = 492.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 16
+text = "TU NOMBRE"
+metadata/en = "YOUR NAME"
+
+[node name="NameEdit" type="LineEdit" parent="ConnectView/FieldsCard" unique_id=1193121728]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 44.0
+offset_right = 492.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_uneditable_color = Color(0.55, 0.57, 0.63, 1)
+theme_override_colors/font_placeholder_color = Color(0.5, 0.52, 0.58, 1)
+theme_override_colors/caret_color = Color(1, 0.95, 0.35, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_input")
+theme_override_styles/read_only = SubResource("sb_input_off")
+theme_override_styles/focus = SubResource("sb_input_focus")
+max_length = 16
+
+[node name="PortLabel" type="Label" parent="ConnectView/FieldsCard" unique_id=1441262277]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 108.0
+offset_right = 492.0
+offset_bottom = 132.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 16
+text = "PUERTO"
+metadata/en = "PORT"
+
+[node name="PortEdit" type="LineEdit" parent="ConnectView/FieldsCard" unique_id=667728232]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 134.0
+offset_right = 492.0
+offset_bottom = 180.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_uneditable_color = Color(0.55, 0.57, 0.63, 1)
+theme_override_colors/font_placeholder_color = Color(0.5, 0.52, 0.58, 1)
+theme_override_colors/caret_color = Color(1, 0.95, 0.35, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_input")
+theme_override_styles/read_only = SubResource("sb_input_off")
+theme_override_styles/focus = SubResource("sb_input_focus")
+max_length = 5
+
+[node name="IpLabel" type="Label" parent="ConnectView/FieldsCard" unique_id=1580885764]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 198.0
+offset_right = 492.0
+offset_bottom = 222.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 16
+text = "IP DEL HOST"
+metadata/en = "HOST IP"
+
+[node name="IpEdit" type="LineEdit" parent="ConnectView/FieldsCard" unique_id=193483673]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 224.0
+offset_right = 492.0
+offset_bottom = 270.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_uneditable_color = Color(0.55, 0.57, 0.63, 1)
+theme_override_colors/font_placeholder_color = Color(0.5, 0.52, 0.58, 1)
+theme_override_colors/caret_color = Color(1, 0.95, 0.35, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_input")
+theme_override_styles/read_only = SubResource("sb_input_off")
+theme_override_styles/focus = SubResource("sb_input_focus")
+placeholder_text = "192.168.1.5"
+max_length = 21
+
+[node name="Help" type="Label" parent="ConnectView/FieldsCard" unique_id=1034983098]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 284.0
+offset_right = 492.0
+offset_bottom = 308.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("10_italic")
+theme_override_font_sizes/font_size = 16
+text = "Haz clic en un campo o pulsa TAB para escribir."
+metadata/en = "Click a field or press TAB to type."
+
+[node name="ConnectList" parent="ConnectView" unique_id=456411889 instance=ExtResource("5_list")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 640.0
+offset_top = 150.0
+offset_right = 1100.0
+offset_bottom = 350.0
+font_size = 40
+row_height = 62.0
+
+[node name="StatusCard" type="Panel" parent="ConnectView" unique_id=130685721]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 366.0
+offset_right = 1100.0
+offset_bottom = 460.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_info")
+
+[node name="IpsLabel" type="Label" parent="ConnectView/StatusCard" unique_id=303210742]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 444.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(1, 0.95, 0.35, 1)
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 3
+
+[node name="StatusLabel" type="Label" parent="ConnectView/StatusCard" unique_id=2049396720]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 57.0
+offset_right = 444.0
+offset_bottom = 93.0
+theme_override_colors/font_color = Color(0.74, 0.75, 0.79, 1)
+theme_override_fonts/font = ExtResource("9_regular")
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 3
+
+[node name="HintBar" type="Control" parent="." unique_id=2024207988]
+anchors_preset = 0
+offset_left = 30.0
+offset_top = 584.0
+offset_right = 1122.0
+offset_bottom = 616.0
+mouse_filter = 2
+
+[node name="BarBg" type="Panel" parent="HintBar" unique_id=973938353]
+layout_mode = 0
+offset_right = 1092.0
+offset_bottom = 32.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_hintbar")
+
+[node name="Hints" type="HBoxContainer" parent="HintBar" unique_id=2034875486]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 1.0
+offset_right = 1076.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_constants/separation = 44
+
+[node name="HintAccept" parent="HintBar/Hints" unique_id=1330079405 instance=ExtResource("6_hint")]
+layout_mode = 2
+text = "ACEPTAR"
+metadata/en = "ACCEPT"
+
+[node name="HintMove" parent="HintBar/Hints" unique_id=222366071 instance=ExtResource("6_hint")]
+layout_mode = 2
+chip_color = Color(0.95, 0.85, 0.1, 1)
+key = "↑ ↓"
+text = "MOVER"
+metadata/en = "MOVE"
+
+[node name="HintFields" parent="HintBar/Hints" unique_id=769478139 instance=ExtResource("6_hint")]
+layout_mode = 2
+chip_color = Color(0.95, 0.85, 0.1, 1)
+key = "TAB"
+text = "EDITAR CAMPOS"
+metadata/en = "EDIT FIELDS"
+
+[node name="HintBack" parent="HintBar/Hints" unique_id=588162486 instance=ExtResource("6_hint")]
+layout_mode = 2
+chip_color = Color(1, 0.55, 0.1, 1)
+key = "ESC"
+text = "ATRÁS"
+metadata/en = "BACK"

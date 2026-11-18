@@ -458,7 +458,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if k.pressed and not k.echo and k.keycode == KEY_R:
 			_leaving = true
 			if GameState.online_mode and Net.active and Net.connected:
-				SceneFade.go(LOBBY_SCENE)       # sigue conectado: se vuelve a la sala para otra ronda
+				# Sigue conectado: otra ronda. El host lleva a los dos a elegir canción; el invitado lo espera allí.
+				Net.set_local("ready", false)
+				if Net.is_host:
+					Net.go_stage("song")
+				else:
+					SceneFade.go(Net.STAGE_SCENES["song"])
 			else:
 				_leave_online()                 # en línea sin rival: se juega en solitario
 				SceneFade.go("res://scenes/gameplay/gameplay.tscn")

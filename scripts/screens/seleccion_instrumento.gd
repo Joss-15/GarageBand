@@ -35,6 +35,13 @@ var _dots2: Array = []
 var _plus_tab: Control = null
 var _chosen: Array = ["", ""]       # instrumento confirmado por cada jugador ("" = aún no)
 
+# Modo en línea: mi tarjeta a la izquierda, la del rival a la derecha, y el sistema LISTO:
+# cada uno elige su instrumento y se marca listo; el host inicia cuando los dos lo están.
+var _online: bool = false
+var _ready_local: bool = false
+var _local_md5: String = ""
+var _badge2: Control = null
+
 # Nodos de la escena seleccion_instrumento.tscn
 @onready var _cover: Control = %Cover
 @onready var _title: Label = %Title
@@ -43,11 +50,15 @@ var _chosen: Array = ["", ""]       # instrumento confirmado por cada jugador ("
 @onready var _panel: Control = %Panel
 @onready var _tab: Control = %PlayerTab
 @onready var _list: Control = %List
+@onready var _badge: Control = %ReadyBadge
 
 
 func _ready() -> void:
 	RB.localize(self)
 	GameState.two_player_mode = false    # el jugador 2 se vuelve a sumar cada vez
+	_online = GameState.online_mode and Net.active and Net.connected
+	if _online:
+		_prepare_online_state()
 	_song = SONG_LIB.find_by_name(GameState.selected_song_name)
 	if _song.is_empty():
 		_song = {
@@ -67,6 +78,8 @@ func _ready() -> void:
 	# La copia del jugador 2 se hace ANTES de llenar la tarjeta 1, para que salga limpia
 	_prepare_player2()
 	_fill_panel()
+	if _online:
+		_setup_online()
 	_play_intro()
 
 
@@ -140,7 +153,8 @@ func _prepare_player2() -> void:
 	for i in RB.INSTRUMENT_IDS.size():
 		_icons2.append(_panel2.get_node("Icon%d" % i))
 		_dots2.append(_panel2.get_node("Dots%d" % i))
-	_build_plus_tab()
+	if not _online:
+		_build_plus_tab()
 
 
 ## Pestaña "+": copia de la pestaña del jugador 1, a su derecha, clicable.
@@ -228,11 +242,13 @@ func _fill_player2() -> void:
 
 func _on_selection_changed(_index: int) -> void:
 	_refresh_icons()
+	if _online and not _ready_local:
+		Net.set_local("instrument", _list.selected_id())     # el rival ve en vivo qué instrumento miro
 
 
 func _refresh_icons() -> void:
 	_paint_icons(_icons, _list.selected)
-	if _two_player and _list2 != null:
+	if (_two_player or _online) and _list2 != null:
 		_paint_icons(_icons2, _list2.selected)
 
 
@@ -247,6 +263,9 @@ func _list_of(player: int) -> Control:
 
 
 func _on_activated(id: String, player: int) -> void:
+	if _online:
+		_online_activate(id)
+		return
 	if _starting or str(_chosen[player]) != "":
 		return
 	var bm: Dictionary = SONG_LIB.load_beatmap(_song, id)
@@ -287,6 +306,9 @@ func _start(bm_p1: Dictionary) -> void:
 func _back() -> void:
 	if _starting:
 		return
+	if _online:
+		_online_back()
+		return
 	_starting = true
 	_list.keyboard_enabled = false
 	SceneFade.go("res://scenes/screens/song_select.tscn")
@@ -296,6 +318,17 @@ func _back() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _starting:
+		return
+
+	# En línea: con la lista bloqueada (ya estoy listo) Enter inicia (host) y Esc quita el LISTO.
+	# Sin estar listo, la lista maneja ↑ ↓ Enter Esc y no hay jugador 2 local.
+	if _online:
+		if _ready_local and event.is_action_pressed("ui_cancel"):
+			_set_ready(false)
+			get_viewport().set_input_as_handled()
+		elif _ready_local and event.is_action_pressed("ui_accept"):
+			_try_start()
+			get_viewport().set_input_as_handled()
 		return
 
 	# Un jugador: la lista ya maneja ↑ ↓ Enter Esc. Aquí solo se escucha la tecla 2.
@@ -360,3 +393,194 @@ func _confirm(player: int) -> void:
 		return
 	var lst: Control = _list_of(player)
 	lst.activated.emit(lst.selected_id())
+
+
+# ── Modo en línea ────────────────────────────────────────────────────────────
+
+## Deja listo el estado global con la canción del host y mi instrumento antes de armar la pantalla.
+func _prepare_online_state() -> void:
+	var ns: Dictionary = Net.song
+	if not ns.is_empty():
+		GameState.selected_song_name = str(ns.get("name", ""))
+		GameState.selected_song_title = str(ns.get("title", ""))
+		GameState.selected_song_artist = str(ns.get("artist", ""))
+		if SONG_LIB.find_by_name(GameState.selected_song_name).is_empty():
+			GameState.selected_song_path = ""      # el invitado no tiene esta canción
+	GameState.selected_instrument = str(Net.local["instrument"])
+	GameState.player1_name = str(Net.local["name"])
+	GameState.player2_name = str(Net.rival.get("name", ""))
+	Net.set_local("ready", false)
+
+
+func _setup_online() -> void:
+	var wav: String = str(_song.get("wav", ""))
+	if wav != "" and FileAccess.file_exists(wav):
+		_local_md5 = FileAccess.get_md5(wav)
+
+	# Distribución de dos tarjetas (la misma que el modo de 2 jugadores locales)
+	var vp_w: float = get_viewport_rect().size.x
+	var x1: float = vp_w * 0.25 - _panel_w * 0.5
+	var x2: float = vp_w * 0.75 - _panel_w * 0.5
+	_panel_home.x = x1
+	_panel.position.x = x1
+	add_child(_panel2)
+	_panel2.position = Vector2(x2, _panel_home.y + SLIDE_FROM_BELOW)
+	create_tween().tween_property(_panel2, "position", Vector2(x2, _panel_home.y), 0.6).set_delay(0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_badge2 = _panel2.get_node("ReadyBadge") as Control
+
+	# La tarjeta del rival solo se mira: sin teclas ni clics
+	_tab2.setup(_rival_name(), "", 2)
+	_list2.set_items(_instrument_rows(), _index_of(str(Net.rival.get("instrument", "guitarra"))), true)
+	_list2.keyboard_enabled = false
+	_list2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for c in _list2.get_children():
+		if c is Control:
+			(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reveal_dots(_dots2)
+	_refresh_icons()
+
+	Net.rival_changed.connect(_refresh_online)
+	Net.song_changed.connect(_refresh_online)
+	Net.countdown_started.connect(_begin_match)
+	_refresh_online()
+
+
+func _rival_name() -> String:
+	var n: String = str(Net.rival.get("name", ""))
+	return n if n != "" else RB.t("Rival", "Rival")
+
+
+## "ok" si se puede jugar; si no, el motivo: none / missing / different / nomap.
+func _song_status() -> String:
+	if Net.song.is_empty():
+		return "none"
+	if SONG_LIB.find_by_name(str(Net.song.get("name", ""))).is_empty():
+		return "missing"
+	var remote_md5: String = str(Net.song.get("md5", ""))
+	if remote_md5 != "" and _local_md5 != "" and remote_md5 != _local_md5:
+		return "different"
+	if SONG_LIB.load_beatmap(_song, str(Net.local["instrument"])).is_empty():
+		return "nomap"
+	return "ok"
+
+
+func _status_text(status: String) -> String:
+	match status:
+		"none":
+			return RB.t("Todavía no hay una canción elegida.", "No song has been picked yet.")
+		"missing":
+			return RB.t("No tienes esta canción en tu juego.", "You do not have this song in your game.")
+		"different":
+			return RB.t("Tu versión de esta canción es distinta a la del anfitrión.", "Your version of this song differs from the host's.")
+		"nomap":
+			return RB.t("Esta canción no tiene mapa de notas para ese instrumento. Elige otro.", "This song has no note chart for that instrument. Pick another.")
+	return ""
+
+
+func _refresh_online() -> void:
+	if not _online or _starting:
+		return
+	var rival_ready: bool = bool(Net.rival.get("ready", false))
+
+	_badge.visible = _ready_local
+	_badge2.visible = rival_ready
+	_panel.modulate = READY_TINT if _ready_local else Color.WHITE
+	_panel2.modulate = READY_TINT if rival_ready else Color.WHITE
+
+	# Muestra en la tarjeta del rival el instrumento que está mirando o eligió
+	var idx: int = _index_of(str(Net.rival.get("instrument", "guitarra")))
+	if _list2.selected != idx:
+		_list2.set_items(_instrument_rows(), idx, false)
+		_list2.keyboard_enabled = false
+		_refresh_icons()
+
+	var status: String = _song_status()
+	_msg.modulate = Color.WHITE
+	if status != "ok" and not _ready_local:
+		_msg.text = _status_text(status)
+		_msg.modulate = Color(1.0, 0.45, 0.45)
+	elif not _ready_local:
+		_msg.text = RB.t("Elige tu instrumento y pulsa ENTER para marcarte LISTO.", "Pick your instrument and press ENTER to get READY.")
+	elif not rival_ready:
+		_msg.text = RB.t("Esperando a %s…", "Waiting for %s…") % _rival_name()
+	elif Net.is_host:
+		_msg.text = RB.t("¡Todos listos! Pulsa ENTER para iniciar la partida.", "Everyone is ready! Press ENTER to start the match.")
+		_msg.modulate = Color(1.0, 0.95, 0.35)
+	else:
+		_msg.text = RB.t("Esperando a que %s inicie la partida…", "Waiting for %s to start the match…") % _rival_name()
+
+
+func _set_ready(value: bool) -> void:
+	_ready_local = value
+	_list.keyboard_enabled = not value
+	if value:
+		Net.set_local("instrument", _list.selected_id())
+	Net.set_local("ready", value)
+	_refresh_online()
+
+
+func _online_activate(_id: String) -> void:
+	if _starting:
+		return
+	if _ready_local:
+		_try_start()
+		return
+	Net.set_local("instrument", _list.selected_id())
+	var status: String = _song_status()
+	if status != "ok":
+		_refresh_online()
+		return
+	_set_ready(true)
+
+
+func _online_back() -> void:
+	if _ready_local:
+		_set_ready(false)
+		return
+	_starting = true
+	_list.keyboard_enabled = false
+	if Net.is_host:
+		Net.go_stage("song")        # el host regresa a elegir canción y arrastra al invitado
+	else:
+		Net.leave()
+		GameState.online_mode = false
+		SceneFade.go(Net.LOBBY_SCENE)
+
+
+## Solo el host: inicia cuando los dos están listos y la canción es válida.
+func _try_start() -> void:
+	if not Net.is_host or _starting:
+		return
+	if _song_status() != "ok" or not _ready_local or not bool(Net.rival.get("ready", false)):
+		return
+	Net.start_match()
+
+
+## Llega la orden de empezar (el host la manda a los dos con la cuenta regresiva).
+## El gameplay espera hasta online_start_at_msec para que los dos arranquen a la vez.
+func _begin_match(seconds: float) -> void:
+	if _starting:
+		return
+	var song: Dictionary = SONG_LIB.find_by_name(str(Net.song.get("name", "")))
+	if song.is_empty():
+		return
+	_starting = true
+	_list.keyboard_enabled = false
+	var instrument: String = str(Net.local["instrument"])
+	GameState.selected_song_name = str(song["name"])
+	GameState.selected_song_title = str(song["title"])
+	GameState.selected_song_artist = str(song.get("artist", ""))
+	GameState.selected_song_path = str(song.get("wav", ""))
+	GameState.selected_stream = load(str(song["wav"])) as AudioStream
+	GameState.selected_instrument = instrument
+	GameState.selected_instrument_p2 = str(Net.rival.get("instrument", "guitarra"))
+	GameState.current_beatmap = SONG_LIB.load_beatmap(song, instrument)
+	GameState.player1_name = str(Net.local["name"])
+	GameState.player2_name = str(Net.rival.get("name", ""))
+	GameState.online_mode = true
+	GameState.two_player_mode = false
+	GameState.online_start_at_msec = Time.get_ticks_msec() + int(seconds * 1000.0)
+	GameState.stop_bgm()
+	_msg.text = RB.t("¡A jugar!", "Get ready!")
+	_msg.modulate = Color(1.0, 0.95, 0.35)
+	SceneFade.go("res://scenes/gameplay/gameplay.tscn")

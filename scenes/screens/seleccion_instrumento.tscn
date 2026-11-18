@@ -212,3 +212,21 @@ mouse_filter = 2
 script = ExtResource("7_rating")
 item_size = 15.0
 dots = true
+
+[node name="ReadyBadge" type="Label" parent="Panel" unique_id=641497086]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 270.0
+offset_top = 12.0
+offset_right = 430.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.45, 0.95, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("8_bold")
+theme_override_font_sizes/font_size = 32
+text = "LISTO"
+horizontal_alignment = 2
+vertical_alignment = 1
+metadata/en = "READY"

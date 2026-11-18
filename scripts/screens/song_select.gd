@@ -33,6 +33,10 @@ var _loading_path: String = ""
 var _stream_cache: Dictionary = {}
 var _starting: bool = false
 
+# Modo en línea: el host elige; el invitado ve la pantalla bloqueada tras un overlay
+var _online: bool = false
+var _locked: bool = false
+
 # Nodos de la escena song_select.tscn
 @onready var _title: Label = %Title
 @onready var _band_box: Control = %BandBox
@@ -51,12 +55,15 @@ var _starting: bool = false
 @onready var _empty_box: Control = %EmptyBox
 @onready var _preview_player: AudioStreamPlayer = %PreviewPlayer
 @onready var _preview_timer: Timer = %PreviewTimer
+@onready var _online_overlay: Control = %OnlineOverlay
+@onready var _wait_label: Label = %WaitLabel
 
 
 func _ready() -> void:
 	GameState.play_menu_music()
 	RB.localize(self)
 	_inst_dots = [%Dots0, %Dots1, %Dots2, %Dots3]
+	_setup_online()
 
 	var player: String = GameState.player1_name
 	if player == "P1":
@@ -80,6 +87,35 @@ func _ready() -> void:
 	_select(start, false)
 	_play_intro()
 	set_process(false)
+
+
+# ── Modo en línea ────────────────────────────────────────────────────────────
+
+func _setup_online() -> void:
+	_online = GameState.online_mode and Net.active and Net.connected
+	_locked = _online and not Net.is_host
+	_online_overlay.visible = _locked
+	if _locked:
+		var host_name: String = str(Net.rival.get("name", ""))
+		if host_name == "":
+			host_name = RB.t("El anfitrión", "The host")
+		_wait_label.text = RB.t("%s está seleccionando la canción...", "%s is choosing the song...") % host_name
+
+
+func _md5_of(path: String) -> String:
+	if path != "" and FileAccess.file_exists(path):
+		return FileAccess.get_md5(path)
+	return ""
+
+
+## Sale de la sala en línea y vuelve al lobby.
+func _leave_room() -> void:
+	if _starting:
+		return
+	_starting = true
+	Net.leave()
+	GameState.online_mode = false
+	SceneFade.go(Net.LOBBY_SCENE)
 
 
 # ── Filas de la lista ────────────────────────────────────────────────────────
@@ -219,6 +255,8 @@ func _update_info_panel() -> void:
 
 
 func _on_row_pressed(double_click: bool, index: int) -> void:
+	if _locked:
+		return
 	if index == _selected and double_click:
 		_play()
 	else:
@@ -226,6 +264,8 @@ func _on_row_pressed(double_click: bool, index: int) -> void:
 
 
 func _on_holder_input(event: InputEvent) -> void:
+	if _locked:
+		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -237,6 +277,8 @@ func _on_holder_input(event: InputEvent) -> void:
 # ── Preescucha ───────────────────────────────────────────────────────────────
 
 func _schedule_preview() -> void:
+	if _locked:
+		return
 	_stop_preview_immediately()
 	_preview_timer.start()
 
@@ -325,11 +367,24 @@ func _play() -> void:
 	create_tween().tween_property(_preview_player, "volume_db", -60.0, 0.3)
 	_cursor.modulate = Color(1.8, 1.8, 1.3, 1.0)
 	create_tween().tween_property(_cursor, "modulate", Color.WHITE, 0.3)
+	if _online:
+		# El host manda la canción y lleva a los dos a la selección de instrumento
+		Net.select_song({
+			"name": str(song["name"]),
+			"title": str(song["title"]),
+			"artist": str(song["artist"]),
+			"md5": _md5_of(path),
+		})
+		Net.go_stage("instrument")
+		return
 	SceneFade.go("res://scenes/screens/seleccion_instrumento.tscn")
 
 
 func _back() -> void:
 	if _starting:
+		return
+	if _online:
+		_leave_room()
 		return
 	_starting = true
 	SceneFade.go("res://scenes/screens/main_menu.tscn")
@@ -354,7 +409,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_back()
 		get_viewport().set_input_as_handled()
 		return
-	if _starting or _songs.is_empty():
+	if _starting or _songs.is_empty() or _locked:
 		return
 	if event.is_action_pressed("ui_down"):
 		_move(1)
