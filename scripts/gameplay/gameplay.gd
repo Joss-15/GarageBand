@@ -86,6 +86,8 @@ var split: bool = false          # dos carriles en pantalla: 2 jugadores locales
 var game_started: bool = false
 var game_ended: bool = false
 var _paused: bool = false
+var _resume_pos: float = -1.0       # posición del audio donde pausó el rival; se aplica al reanudar
+var _remote_pause: bool = false     # la pausa la hizo el rival (en línea): solo espero a que continúe
 
 var _last_time: float = 0.0
 var _beat_period: float = 0.5
@@ -256,6 +258,7 @@ func _setup_hud() -> void:
 
 
 func _connect_pause() -> void:
+	_pause.resume_requested.connect(_on_resume_requested)
 	_pause.resume_finished.connect(_on_resume_finished)
 	_pause.restart_requested.connect(_on_restart)
 	_pause.quit_requested.connect(_on_quit)
@@ -667,13 +670,31 @@ func _notification(what: int) -> void:
 
 func _open_pause() -> void:
 	_paused = true
+	_remote_pause = false
 	get_tree().paused = true
 	_pause.open()
+	if online:
+		# El rival se detiene en este mismo punto exacto del audio
+		Net.send_pause(audio_player.get_playback_position())
+
+
+## El jugador eligió continuar. En línea se le avisa al rival y los dos empiezan el 3-2-1 a la vez.
+func _on_resume_requested() -> void:
+	var delay: float = 0.0
+	if online:
+		delay = Net.send_resume()
+	_pause.begin_countdown(delay)
 
 
 func _on_resume_finished() -> void:
 	_paused = false
+	_remote_pause = false
 	get_tree().paused = false
+	if _resume_pos >= 0.0:
+		# Volver al mismo punto donde pausó el rival, para que los dos sigan alineados
+		audio_player.seek(_resume_pos)
+		_last_time = maxf(_resume_pos - AudioServer.get_output_latency() - 0.05, 0.0)
+		_resume_pos = -1.0
 
 
 func _on_restart() -> void:
@@ -709,6 +730,8 @@ func _setup_online() -> void:
 	_countdown_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 	_countdown_lbl.add_theme_constant_override("outline_size", 10)
 	Net.rival_event.connect(_on_rival_event)
+	Net.rival_paused.connect(_on_rival_paused)
+	Net.rival_resumed.connect(_on_rival_resumed)
 	Net.rival_finished.connect(_on_rival_finished)
 	Net.peer_left.connect(_on_rival_left)
 
@@ -822,8 +845,30 @@ func _on_rival_finished(d: Dictionary) -> void:
 		_diff_cap.text = RB.t("¡TERMINÓ!", "FINISHED!")
 
 
+## El rival pausó: aquí también se detiene todo y el audio vuelve al punto exacto donde él pausó.
+func _on_rival_paused(pos: float) -> void:
+	if game_ended or not game_started:
+		return
+	if _paused and not _remote_pause and Net.is_host:
+		return         # pausamos a la vez: prevalece la pausa del anfitrión
+	_paused = true
+	_remote_pause = true
+	get_tree().paused = true
+	_resume_pos = pos          # el audio no se puede mover en pausa: se mueve al reanudar
+	var who: String = GameState.player2_name if GameState.player2_name not in ["", "P2"] else RB.t("El rival", "The rival")
+	_pause.open_remote(who)
+
+
+## El rival continúa: cuenta regresiva común y todos retoman juntos.
+func _on_rival_resumed() -> void:
+	if _paused and _remote_pause:
+		_pause.begin_countdown(0.0)
+
+
 func _on_rival_left(_reason: String) -> void:
 	_rival_gone = true
+	if _paused and _remote_pause:
+		_pause.begin_countdown(0.0)      # el rival se fue estando en pausa: se retoma sin él
 	if _diff_cap != null:
 		_diff_cap.text = RB.t("DESCONECTADO", "DISCONNECTED")
 		_diff_cap.add_theme_color_override("font_color", PERF_LOW)

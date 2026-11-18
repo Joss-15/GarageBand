@@ -20,6 +20,8 @@ signal rival_changed                        # cambió nombre / instrumento / lis
 signal song_changed                         # el host eligió otra canción
 signal countdown_started(seconds: float)    # empieza la cuenta regresiva de la partida
 signal rival_state(data: Dictionary)        # estado en vivo del rival
+signal rival_paused(position: float)        # el rival pausó; position = posición exacta del audio en ese momento
+signal rival_resumed                        # el rival eligió continuar: empieza la cuenta regresiva común
 signal rival_event(data: Dictionary)        # golpe del rival (tecla, acierto o fallo) para su carril en vivo
 signal rival_finished(data: Dictionary)     # resultado final del rival
 signal stage_changed(stage: String)         # el host cambió la etapa de la sala (canción / instrumento)
@@ -272,6 +274,32 @@ func send_state(data: Dictionary) -> void:
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func _rpc_state(data: Dictionary) -> void:
 	rival_state.emit(data)
+
+
+## Pausa en línea: el que pausa manda la posición exacta del audio para que los dos vuelvan
+## al mismo punto de la canción.
+func send_pause(position: float) -> void:
+	if connected:
+		_rpc_pause.rpc(position)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_pause(position: float) -> void:
+	rival_paused.emit(position)
+
+
+## El que pausó decide continuar. Devuelve cuánto debe esperar (media latencia) antes de
+## empezar SU cuenta regresiva, para que los dos 3-2-1 arranquen en el mismo instante real.
+func send_resume() -> float:
+	if not connected:
+		return 0.0
+	_rpc_resume.rpc()
+	return rtt_ms * 0.5 / 1000.0
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_resume() -> void:
+	rival_resumed.emit()
 
 
 ## Golpe propio para el carril del rival: {k: "p" tecla | "h" acierto | "m" nota perdida | "a" tecla al aire,

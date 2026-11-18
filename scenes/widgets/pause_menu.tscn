@@ -79,3 +79,38 @@ theme_override_fonts/font = ExtResource("3_bold")
 theme_override_font_sizes/font_size = 160
 text = "3"
 horizontal_alignment = 1
+
+[node name="RemoteMsg" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+offset_left = 0.0
+offset_top = 230.0
+offset_right = 1152.0
+offset_bottom = 300.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 52
+text = "PAUSA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RemoteSub" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+offset_left = 0.0
+offset_top = 310.0
+offset_right = 1152.0
+offset_bottom = 350.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.85, 0.86, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 26
+text = "Esperando a que continúe…"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/en = "Waiting for them to resume…"

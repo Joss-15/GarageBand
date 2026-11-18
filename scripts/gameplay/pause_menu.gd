@@ -5,11 +5,13 @@ extends CanvasLayer
 
 const RB = preload("res://scripts/core/rb_theme.gd")
 
+signal resume_requested      # el jugador pidió continuar (la partida decide cuándo empieza la cuenta)
 signal resume_finished
 signal restart_requested
 signal quit_requested
 
 var _counting: bool = false
+var _count_tween: Tween = null
 
 # Nodos de la escena pause_menu.tscn
 @onready var _dim: ColorRect = %Dim
@@ -17,16 +19,21 @@ var _counting: bool = false
 @onready var _title: Label = %Title
 @onready var _list: Control = %List
 @onready var _count: Label = %Count
+@onready var _remote_msg: Label = %RemoteMsg
+@onready var _remote_sub: Label = %RemoteSub
 
 
 func _ready() -> void:
 	RB.localize(self)
 	_list.activated.connect(_on_activated)
-	_list.cancelled.connect(_start_countdown)
+	_list.cancelled.connect(_request_resume)
 
 
 func open() -> void:
+	_kill_countdown()
 	_counting = false
+	_remote_msg.visible = false
+	_remote_sub.visible = false
 	_count.visible = false
 	_title.visible = true
 	_bar.visible = true
@@ -50,7 +57,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton:
 		var jb := event as InputEventJoypadButton
 		if jb.pressed and jb.button_index == JOY_BUTTON_START:
-			_start_countdown()
+			_request_resume()
 			get_viewport().set_input_as_handled()
 
 
@@ -59,7 +66,7 @@ func _on_activated(id: String) -> void:
 		return
 	match id:
 		"resume":
-			_start_countdown()
+			_request_resume()
 		"restart":
 			_list.keyboard_enabled = false
 			restart_requested.emit()
@@ -68,17 +75,61 @@ func _on_activated(id: String) -> void:
 			quit_requested.emit()
 
 
+## Pausa que hizo el otro jugador en línea: sin menú ni teclas, solo el aviso.
+func open_remote(who: String) -> void:
+	_kill_countdown()
+	_counting = false
+	_count.visible = false
+	_title.visible = false
+	_bar.visible = false
+	_list.visible = false
+	_list.keyboard_enabled = false
+	_remote_msg.text = RB.t("%s pausó la partida", "%s paused the game") % who
+	_remote_msg.visible = true
+	_remote_sub.visible = true
+	_dim.modulate.a = 0.0
+	visible = true
+	create_tween().tween_property(_dim, "modulate:a", 1.0, 0.2)
+
+
+## Quien pausó pidió continuar: la partida avisa al rival y llama aquí.
+func _request_resume() -> void:
+	if _counting or not _list.keyboard_enabled:
+		return
+	resume_requested.emit()
+
+
+## Empieza la cuenta 3-2-1 (tras esperar `delay` s: es la media latencia que compensa
+## al que avisó, para que los dos contadores arranquen a la vez).
+func begin_countdown(delay: float = 0.0) -> void:
+	if _counting:
+		return
+	_list.keyboard_enabled = false
+	if delay > 0.0:
+		await get_tree().create_timer(delay, true).timeout
+	_start_countdown()
+
+
+func _kill_countdown() -> void:
+	if _count_tween != null and _count_tween.is_valid():
+		_count_tween.kill()
+	_count_tween = null
+
+
 func _start_countdown() -> void:
 	if _counting:
 		return
 	_counting = true
 	_list.keyboard_enabled = false
+	_remote_msg.visible = false
+	_remote_sub.visible = false
 	_title.visible = false
 	_bar.visible = false
 	_list.visible = false
 	_count.visible = true
 	_dim.color = Color(0.0, 0.0, 0.04, 0.45)
 	var tw := create_tween()
+	_count_tween = tw
 	for n in [3, 2, 1]:
 		tw.tween_callback(_show_number.bind(n))
 		tw.tween_interval(0.7)
